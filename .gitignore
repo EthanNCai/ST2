@@ -1,0 +1,16 @@
+.vscode
+
+*.pyc
+__pycache__
+
+weiboSpider/build/
+weiboSpider/dist/
+*.egg-info
+
+
+weiboSpider/weibo/*
+weiboSpider/tests/*
+weiboSpider/weibo.db
+*.log
+
+.idea
