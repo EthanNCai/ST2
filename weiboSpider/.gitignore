@@ -7,7 +7,7 @@ build/
 dist/
 *.egg-info
 
-config.json
+
 
 weibo/
 weibo.db
