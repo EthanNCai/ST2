@@ -4,7 +4,7 @@
     "since_date": "2024-04-01",
     "end_date": "now",
     "random_wait_pages": [1,  2],
-    "random_wait_seconds": [20, 80],
+    "random_wait_seconds": [120, 180],
     "global_wait": [[1000, 3600], [500, 2000]],
     "write_mode": ["csv", "json"],
     "pic_download": 0,
