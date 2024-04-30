@@ -26,7 +26,7 @@ class SerialDataset(Dataset):
     def __getitem__(self, i):
         data, target = self.stepped_serial_data[i]
         if self.to_tensor:
-            return torch.tensor(data), torch.tensor(target)
+            return torch.tensor(data).double(), torch.tensor(target).double()
         else:
             return data, target
 
@@ -37,8 +37,9 @@ def main():
     serial_dataloader = DataLoader(serial_dataset, batch_size=1, shuffle=True, num_workers=2)
 
     for i, (data, target) in enumerate(serial_dataloader):
+        # data -> (batch, len)
+        print(data.shape)
         break
 
 
-if __name__ == '__main__':
-    main()
+
