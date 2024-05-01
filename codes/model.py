@@ -152,3 +152,5 @@ def test_case():
     # tensor -> (batch, channels, len)
     semantic_info = []
     out = st2(time_points, semantic_info)
+
+# test_case()
