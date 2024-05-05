@@ -3,16 +3,18 @@ import logging
 from .info_parser import InfoParser
 from .parser import Parser
 from .util import handle_html, string_to_int
-
+from datetime import datetime
 logger = logging.getLogger('spider.index_parser')
 
 
 class IndexParser(Parser):
-    def __init__(self, cookie, user_uri):
+    def __init__(self, cookie, user_uri, since_day, end_day):
         self.cookie = cookie
         self.user_uri = user_uri
         self.url = 'https://weibo.cn/%s/profile' % (user_uri)
         self.selector = handle_html(self.cookie, self.url)
+        self.since_day = since_day
+        self.end_day = end_day
 
     def _get_user_id(self):
         """获取用户id，使用者输入的user_id不一定是正确的，可能是个性域名等，需要获取真正的user_id"""
@@ -45,12 +47,10 @@ class IndexParser(Parser):
 
     def get_page_num(self):
         """获取微博总页数"""
-        try:
-            if self.selector.xpath("//input[@name='mp']") == []:
-                page_num = 1
-            else:
-                page_num = (int)(self.selector.xpath("//input[@name='mp']")
-                                 [0].attrib['value'])
-            return page_num
-        except Exception as e:
-            logger.exception(e)
+        start_date = datetime.strptime(self.since_day, "%Y-%m-%d")
+        end_date = datetime.strptime(self.end_day, "%Y-%m-%d")
+        print("dbg>>>", end_date)
+        date_delta = end_date - start_date
+        return int(date_delta.days)
+
+

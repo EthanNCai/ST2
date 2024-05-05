@@ -2,7 +2,7 @@ import logging
 import re
 import sys
 from datetime import datetime, timedelta
-
+from datetime import datetime
 from .. import datetime_util
 from ..weibo import Weibo
 from .comment_parser import CommentParser
@@ -28,17 +28,14 @@ class PageParser(Parser):
         self.end_date = user_config['end_date']
         self.page = page
         self.url = 'https://weibo.cn/%s/profile?page=%d' % (self.user_uri, page)
+
         if self.end_date != 'now':
-            since_date = self.since_date.split(' ')[0].split('-')
-            end_date = self.end_date.split(' ')[0].split('-')
-            for date in [since_date, end_date]:
-                for i in [1, 2]:
-                    if len(date[i]) == 1:
-                        date[i] = '0' + date[i]
-            starttime = ''.join(since_date)
-            endtime = ''.join(end_date)
+
+            target_date = datetime.strptime(self.end_date, "%Y-%m-%d") - timedelta(days=page)
+            target_date = target_date.strftime("%Y%m%d")
             self.url = 'https://weibo.cn/%s/profile?starttime=%s&endtime=%s&advancedfilter=1&page=%d' % (
-                self.user_uri, starttime, endtime, page)
+                self.user_uri, target_date, target_date, 1)
+        print("Debug url >>>", self.url)
         self.selector = ''
         self.to_continue = True
         is_exist = ''
@@ -54,7 +51,7 @@ class PageParser(Parser):
         if not is_exist:
             PageParser.empty_count += 1
         if PageParser.empty_count > 2:
-            self.to_continue = False
+            # self.to_continue = False
             PageParser.empty_count = 0
         self.filter = filter
 

@@ -139,7 +139,7 @@ class Spider:
 
     def get_user_info(self, user_uri):
         """获取用户信息"""
-        self.user = IndexParser(self.cookie, user_uri).get_user()
+        self.user = IndexParser(self.cookie, user_uri,self.since_date,self.end_date).get_user()
         self.page_count += 1
 
     def download_user_avatar(self, user_uri):
@@ -153,7 +153,7 @@ class Spider:
             self.file_download_timeout).handle_download(pic_urls)
 
     def get_weibo_info(self):
-        """获取微博信息"""
+        """获取微博信息 Entry-2 """
         try:
             since_date = datetime_util.str_to_time(
                 self.user_config['since_date'])
@@ -161,7 +161,7 @@ class Spider:
             if since_date <= now:
                 page_num = IndexParser(
                     self.cookie,
-                    self.user_config['user_uri']).get_page_num()  # 获取微博总页数
+                    self.user_config['user_uri'], self.since_date, self.end_date).get_page_num()  # 获取微博总页数
                 self.page_count += 1
                 if self.page_count > 2 and (self.page_count +
                                             page_num) > self.global_wait[0][0]:
@@ -180,14 +180,7 @@ class Spider:
                         self.cookie,
                         self.user_config, page, self.filter).get_one_page(
                             self.weibo_id_list)  # 获取第page页的全部微博
-                    logger.info(
-                        u'%s已获取%s(%s)的第%d页微博%s',
-                        '-' * 30,
-                        self.user.nickname,
-                        self.user.id,
-                        page,
-                        '-' * 30,
-                    )
+                    print(f"微博获取页>>>{page}/{page_num + 1}")
                     self.page_count += 1
                     if weibos:
                         yield weibos
@@ -304,7 +297,7 @@ class Spider:
                                 self.file_download_timeout))
 
     def get_one_user(self, user_config):
-        """获取一个用户的微博"""
+        """获取一个用户的微博 - Entry 1"""
         try:
             self.get_user_info(user_config['user_uri'])
             logger.info(self.user)
