@@ -64,7 +64,7 @@ class Transformer(nn.Module):
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
-                Attention(dim, heads=heads, dim_head=dim_head, dropout=dropout),
+            Attention(dim, heads=heads, dim_head=dim_head, dropout=dropout),
                 FeedForward(dim, mlp_dim, dropout=dropout)
             ]))
 
@@ -133,8 +133,6 @@ def test_case():
     time_step = 256
     patch_size = 16
     patch_token_dim = 1024
-    assert(time_step % patch_size == 0,
-           "invalid patch size ! time_step % patch_size must equal to 0")
 
     st2 = ST2_Model(
         seq_len=time_step,
