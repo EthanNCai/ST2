@@ -102,7 +102,7 @@ class ST2_Model(nn.Module):
             nn.Linear(dim, num_classes)
         )
 
-    def forward(self, time_series, semantic_info):
+    def forward(self, time_series):
         x = self.to_patch_embedding(time_series)
         # patched and flattened x -> torch.Size([1, 1024])
         n_batch, n_channel, _ = x.shape

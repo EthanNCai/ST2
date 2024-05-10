@@ -8,11 +8,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
+import Visualizer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 16
-epochs = 1
+epochs = 3
 time_step = 512
 patch_size = 16
 patch_token_dim = 512
@@ -42,11 +43,13 @@ def main():
     # sin_test = np.sin(np.arange(500) * 0.02) + np.random.randn(500) * 0.02
     df = pd.read_csv('../datas/airline_passengers.csv')
     # airline_passengers = df['Passengers'].tolist()
-    airline_passengers = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.01
+    airline_passengers = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.3
 
-    # scaler = preprocessing.MinMaxScaler()
-    # airline_passengers = scaler.fit_transform(np.array(airline_passengers).reshape(-1, 1))
-    # airline_passengers = airline_passengers.reshape(-1)
+    """
+    scaler = preprocessing.MinMaxScaler()
+    airline_passengers = scaler.fit_transform(np.array(airline_passengers).reshape(-1, 1))
+    airline_passengers = airline_passengers.reshape(-1)
+    """
 
     airline_passengers_test = airline_passengers[int(len(airline_passengers) * 0.7):]
     airline_passengers_train = airline_passengers[:int(len(airline_passengers) * 0.7)]
@@ -75,7 +78,7 @@ def main():
             target = target.to(device).to(dtype=torch.float32)
             # torch.Size([32])
 
-            output = st2(data, 2)
+            output = st2(data)
 
             output = output.squeeze(-1)
 
@@ -94,7 +97,7 @@ def main():
             with torch.no_grad():
                 data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
                 target = target.to(device).to(dtype=torch.float32)
-                output = st2(data, 2)
+                output = st2(data)
                 output = output.squeeze(-1)
                 loss = criterion(output, target)
 
@@ -103,12 +106,7 @@ def main():
         print(f"test --> ,loss:{round(test_loss / len(sin_test_dataloader), 3)}")
 
     # train finished
-
-    airline_passengers_pred = copy.deepcopy(airline_passengers).tolist()  # here
-
-    plt.plot(airline_passengers_pred, c='r')
-    plt.plot(airline_passengers, c='g')
-    plt.show()
+    Visualizer.visualizer(airline_passengers, 1000, time_step, st2, device=device)
 
 
 if __name__ == '__main__':
