@@ -9,18 +9,40 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 import Visualizer
-from LSTM_Model import SimpleLSTM
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-batch_size = 16
-epochs = 2
-time_step = 128
+batch_size = 32
+epochs = 1
+time_step = 256
+patch_size = 2
+patch_token_dim = 128
 learning_rate = 0.001
-target_mean_len = 1
+target_mean_len = 5
 train_test_ratio = 0.9
 
-lstm = SimpleLSTM(input_size=time_step, hidden_size=50, num_layers=8, ).to(device)
+if time_step % patch_size != 0:
+    print("invalid patch size ! time_step % patch_size must equal to 0")
+    quit()
+
+st2 = ST2_Model(
+    seq_len=time_step,
+    patch_size=patch_size,
+    num_classes=1,
+    channels=1,
+    dim=patch_token_dim,
+    depth=8,
+    heads=8,
+    mlp_dim=64,
+    dropout=0.1,
+    emb_dropout=0.1
+).to(device)
+
+
+def scaling(raw_data):
+    scaler = preprocessing.MinMaxScaler()
+    raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
+    return raw_data.reshape(-1)
 
 
 def main():
@@ -30,16 +52,13 @@ def main():
     # airline_passengers = df['Passengers'].tolist()
     price_df = pd.read_csv('../stock_fetching/SPX.csv')
     price = price_df['close'].tolist()
-    price = np.array(list(reversed(price)))
+    price = np.array(price)
     # airline_passengers = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.3
 
     # train = airline_passengers[:int(len(airline_passengers) * train_test_ratio)]
     # test = airline_passengers[:int(len(airline_passengers) * train_test_ratio)]
 
-    raw_data = price
-    scaler = preprocessing.MinMaxScaler()
-    raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
-    raw_data = raw_data.reshape(-1)
+    raw_data = scaling(price)
 
     print('raw amount >>>', len(raw_data))
     print('train amount >>>', int(len(raw_data) * train_test_ratio))
@@ -53,15 +72,15 @@ def main():
     test_serial = SerialDataset(test, time_step=time_step,
                                 target_mean_len=target_mean_len,
                                 to_tensor=True)
-    train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=True, num_workers=2,
+    train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=False, num_workers=2,
                               drop_last=True)
     test_loader = DataLoader(test_serial, batch_size=batch_size, shuffle=True, num_workers=2,
                              drop_last=True)
 
     criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(lstm.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(st2.parameters(), lr=learning_rate)
     for epoch_index in range(epochs):
-        lstm.train()
+        st2.train()
         for batch_index, (data, target) in enumerate(train_loader):
             # data -> (batch, len)
 
@@ -71,7 +90,7 @@ def main():
             target = target.to(device).to(dtype=torch.float32)
             # torch.Size([32])
 
-            output = lstm(data)
+            output = st2(data)
 
             output = output.squeeze(-1)
 
@@ -82,7 +101,7 @@ def main():
             print(
                 f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
 
-        lstm.eval()
+        # st2.eval()
 
         test_loss = 0
 
@@ -90,7 +109,7 @@ def main():
             with torch.no_grad():
                 data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
                 target = target.to(device).to(dtype=torch.float32)
-                output = lstm(data)
+                output = st2(data)
                 output = output.squeeze(-1)
                 loss = criterion(output, target)
 
@@ -99,10 +118,8 @@ def main():
         print(f"test --> ,loss:{round(test_loss / len(test_loader), 3)}")
 
     # train finished
+    # Visualizer.visualizer(train, test, 5, time_step, st2, device=device)
 
-    # Visualizer.visualizer(train, test, len(test), time_step, lstm, device=device)
 
-
-#
 if __name__ == '__main__':
     main()

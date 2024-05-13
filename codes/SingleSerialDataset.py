@@ -2,6 +2,14 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 import pandas as pd
+from sklearn import preprocessing
+
+
+def scaling(raw_data):
+    scaler = preprocessing.MinMaxScaler()
+    raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
+    return raw_data.reshape(-1)
+
 
 class SerialDataset(Dataset):
     def __init__(self, raw_serial, time_step, target_mean_len, to_tensor=True):
@@ -35,7 +43,7 @@ def main():
     # sin_serial = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.1
     df = pd.read_csv('../datas/airline_passengers.csv')
     airline_passengers = df['Passengers'].tolist()
-    serial_dataset = SerialDataset(airline_passengers, time_step=10, target_mean_len=1,to_tensor=True)
+    serial_dataset = SerialDataset(airline_passengers, time_step=10, target_mean_len=1, to_tensor=True)
     serial_dataloader = DataLoader(serial_dataset, batch_size=1, shuffle=True, num_workers=2)
 
     for i, (data, target) in enumerate(serial_dataloader):
@@ -43,7 +51,7 @@ def main():
         print(data.shape)
         break
 
+
 if __name__ == '__main__':
     # main()
     pass
-
