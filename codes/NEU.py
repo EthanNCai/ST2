@@ -5,15 +5,6 @@ import torch
 from datasets import load_dataset
 from sentence_transformers import SentenceTransformer
 
-# # (B, C, L) -> (B, L, C)
-# embeddings = embeddings.permute(0, 2, 1)
-#
-# print(embeddings.shape)
-# embeddings = m(embeddings)
-#
-# # (B, C, L) -> (B, L)
-# embeddings = embeddings.view(embeddings.shape[0],embeddings.shape[1])
-# print(embeddings.shape)
 
 class NewsExtractionUnit(nn.Module):
 
@@ -34,14 +25,14 @@ class NewsExtractionUnit(nn.Module):
         out = out.permute(1, 0)
         out = self.pooling(out)
         # (C, L) -> (L)
-        out = out.view(1,out.shape[0],)
+        out = out.view(1, out.shape[0], )
         return out
 
 
 def test():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    neu = NewsExtractionUnit('/home/cjz/models/bert-base-chinese/',dim_input=768,dim_output=1024).to(device)
-    news = [['你好，这是一个例子','我好吗，这一点都不好'],['我好吗，这一点都不好','我好吗，这一点都不好','我好吗，这一点都不好'],['我好吗，这一点都不好']]
-    output = torch.concat([neu(new) for new in news],dim=0)
+    neu = NewsExtractionUnit('/home/cjz/models/bert-base-chinese/', dim_input=768, dim_output=1024).to(device)
+    news = [['你好，这是一个例子', '我好吗，这一点都不好'],
+            ['我好吗，这一点都不好', '我好吗，这一点都不好', '我好吗，这一点都不好'], ['我好吗，这一点都不好']]
+    output = torch.concat([neu(new) for new in news], dim=0)
     print(output.shape)
-

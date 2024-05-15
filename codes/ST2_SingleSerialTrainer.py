@@ -21,7 +21,7 @@ patch_token_dim = 32
 mlp_dim = 64
 learning_rate = 0.001
 target_mean_len = 1
-train_test_ratio = 0.9
+train_test_ratio = 0.8
 dropout = 0.1
 
 if time_step % patch_size != 0:
@@ -94,8 +94,8 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            # print(
-            #     f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
+            print(
+                f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
 
         # st2.eval()
 

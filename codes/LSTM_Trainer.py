@@ -19,7 +19,7 @@ epochs = 2
 time_step = 128
 learning_rate = 0.001
 target_mean_len = 1
-train_test_ratio = 0.9
+train_test_ratio = 0.8
 
 lstm = SimpleLSTM(input_size=time_step, hidden_size=50, num_layers=8, ).to(device)
 

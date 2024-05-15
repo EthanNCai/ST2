@@ -9,6 +9,8 @@ import collections
 import contextlib
 import re
 import torch
+from NEU import NewsExtractionUnit
+
 
 def get_news(news):
     return news
@@ -61,8 +63,10 @@ class SingleFeatureSerialDatasetForST2(Dataset):
 
     def __getitem__(self, i):
         data, target = self.stepped_serial_data[i]
+
         dates = self.stepped_serial_data_date_stamp[i]
 
+        print('get_item >>>',dates)
         if self.to_tensor:
             return torch.tensor(data).double(), torch.tensor(target).double(), dates
         else:
@@ -70,6 +74,10 @@ class SingleFeatureSerialDatasetForST2(Dataset):
 
 
 def main():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    batch_size = 2
+
     stock_df = pd.read_csv('../stock_fetching/SPX-10.csv')
 
     price = stock_df['close'].tolist()
@@ -80,7 +88,7 @@ def main():
 
     with open('../datas/news_dict.pickle', 'rb') as f:
         news_dict = pickle.load(f)
-
+    neu = NewsExtractionUnit('/home/cjz/models/bert-base-chinese/', dim_input=768, dim_output=1024).to(device)
     serial_dataset = SingleFeatureSerialDatasetForST2(raw_serial=price,
                                                       date_stamps=dates,
                                                       time_step=3,
@@ -90,17 +98,26 @@ def main():
     serial_dataloader = DataLoader(serial_dataset, batch_size=2, shuffle=True, num_workers=2)
 
     for i, (data, target, corresponding_dates) in enumerate(serial_dataloader):
-        # data -> (batch, len)
-        print(corresponding_dates)
-        news = [news_dict[date] for date in corresponding_dates]
+        # data -> (B, L)  len is actually
+        # convert (B, L) -> (B, C, L)
+        data = data.unsqueeze(1)
+        # print(data.shape)
 
-        # news = [str(new) for new in (news_for_one_day for news_for_one_day in news)]
+        # load news strings
+        news = []
+        for _ in range(batch_size):
+            news.append([])
+        for corresponding_date in corresponding_dates:
+            for b in range(batch_size):
+                news[b].extend(news_dict[corresponding_date[b]])
 
-        assert len(news) == len(data)
-        print(data.shape)
-        print(corresponding_dates)
-        # print(len(all_dates))
-        # print(len(all_dates[0]))
+        # embed news using News Extraction Unit (NEU)
+        news_embeddings = torch.concat([neu(new) for new in news], dim=0)
+
+        # model(data, news_embeddings)
+
+        print(news)
+        assert len(news) == batch_size
         break
 
 
