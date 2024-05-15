@@ -9,17 +9,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 import Visualizer
+from sklearn.metrics import mean_absolute_percentage_error
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-batch_size = 32
-epochs = 1
+batch_size = 16
+epochs = 2
 time_step = 256
-patch_size = 2
-patch_token_dim = 128
+patch_size = 4
+patch_token_dim = 32
+mlp_dim = 64
 learning_rate = 0.001
-target_mean_len = 5
+target_mean_len = 1
 train_test_ratio = 0.9
+dropout = 0.1
 
 if time_step % patch_size != 0:
     print("invalid patch size ! time_step % patch_size must equal to 0")
@@ -33,9 +36,9 @@ st2 = ST2_Model(
     dim=patch_token_dim,
     depth=8,
     heads=8,
-    mlp_dim=64,
-    dropout=0.1,
-    emb_dropout=0.1
+    mlp_dim=mlp_dim,
+    dropout=dropout,
+    emb_dropout=dropout
 ).to(device)
 
 
@@ -98,25 +101,26 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            print(
-                f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
+            # print(
+            #     f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
 
         # st2.eval()
 
-        test_loss = 0
-
+        test_MSE_loss = 0
+        test_MAPE_loss = 0
         for i, (data, target) in enumerate(test_loader):
             with torch.no_grad():
                 data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
                 target = target.to(device).to(dtype=torch.float32)
                 output = st2(data)
                 output = output.squeeze(-1)
-                loss = criterion(output, target)
+                MSE_loss = criterion(output, target)
+                MAPE_loss = mean_absolute_percentage_error(output.cpu(), target.cpu())
+                test_MSE_loss += MSE_loss.item()
+                test_MAPE_loss += MAPE_loss
 
-                test_loss += loss.item()
-
-        print(f"test --> ,loss:{round(test_loss / len(test_loader), 3)}")
-
+        print(
+            f"test --> MSE_loss:{round(test_MSE_loss / len(test_loader), 3)},MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}")
     # train finished
     # Visualizer.visualizer(train, test, 5, time_step, st2, device=device)
 

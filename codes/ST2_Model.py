@@ -74,6 +74,7 @@ class Transformer(nn.Module):
             x = ff(x) + x
         return x
 
+## class mean_pooling ~
 
 class ST2_Model(nn.Module):
     def __init__(self, *, seq_len, patch_size, num_classes, dim, depth, heads, mlp_dim, channels=1, dim_head=64,
@@ -88,6 +89,8 @@ class ST2_Model(nn.Module):
             Rearrange('b c (n p) -> b n (p c)', p=patch_size),
             nn.LayerNorm(patch_dim),
             nn.Linear(patch_dim, dim),
+            # identity layer
+            nn.Linear(dim, dim),
             nn.LayerNorm(dim),
         )
 

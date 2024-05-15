@@ -9,12 +9,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 import Visualizer
+from sklearn.metrics import mean_absolute_percentage_error
 from LSTM_Model import SimpleLSTM
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 16
-epochs = 2
+epochs = 1
 time_step = 128
 learning_rate = 0.001
 target_mean_len = 1
@@ -53,7 +54,7 @@ def main():
     test_serial = SerialDataset(test, time_step=time_step,
                                 target_mean_len=target_mean_len,
                                 to_tensor=True)
-    train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=True, num_workers=2,
+    train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=False, num_workers=2,
                               drop_last=True)
     test_loader = DataLoader(test_serial, batch_size=batch_size, shuffle=True, num_workers=2,
                              drop_last=True)
@@ -84,7 +85,8 @@ def main():
 
         lstm.eval()
 
-        test_loss = 0
+        test_MSE_loss = 0
+        test_MAPE_loss = 0
 
         for i, (data, target) in enumerate(test_loader):
             with torch.no_grad():
@@ -92,11 +94,12 @@ def main():
                 target = target.to(device).to(dtype=torch.float32)
                 output = lstm(data)
                 output = output.squeeze(-1)
-                loss = criterion(output, target)
+                MSE_loss = criterion(output, target)
+                MAPE_loss = mean_absolute_percentage_error(output.cpu(), target.cpu())
+                test_MSE_loss += MSE_loss.item()
+                test_MAPE_loss += MAPE_loss
 
-                test_loss += loss.item()
-
-        print(f"test --> ,loss:{round(test_loss / len(test_loader), 3)}")
+        print(f"test --> ,MSE_loss:{round(test_MSE_loss / len(test_loader), 3)},MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}")
 
     # train finished
 

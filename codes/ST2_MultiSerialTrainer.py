@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 import Visualizer
+from sklearn.metrics import mean_absolute_percentage_error
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -120,19 +121,23 @@ def main():
 
         # st2.eval()
 
-        test_loss = 0
-
+        test_MSE_loss = 0
+        test_MAPE_loss = 0
         for i, (data, target) in enumerate(test_loader):
             with torch.no_grad():
                 data = data.to(device).to(dtype=torch.float32)
+
+                # torch.Size([32, channel (features), 256])
                 target = target.to(device).to(dtype=torch.float32)
                 output = st2(data)
                 output = output.squeeze(-1)
-                loss = criterion(output, target)
+                MSE_loss = criterion(output, target)
+                MAPE_loss = mean_absolute_percentage_error(output.cpu(), target.cpu())
+                test_MSE_loss += MSE_loss.item()
+                test_MAPE_loss += MAPE_loss
 
-                test_loss += loss.item()
-
-        print(f"test --> ,loss:{round(test_loss / len(test_loader), 3)}")
+        print(
+            f"test --> ,MSE_loss:{round(test_MSE_loss / len(test_loader), 3)},MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}")
 
     # train finished
     # Visualizer.visualizer(train, test, 5, time_step, st2, device=device)
