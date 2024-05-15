@@ -5,7 +5,6 @@ import torch
 from datasets import load_dataset
 from sentence_transformers import SentenceTransformer
 
-
 # # (B, C, L) -> (B, L, C)
 # embeddings = embeddings.permute(0, 2, 1)
 #

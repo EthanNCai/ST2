@@ -1,5 +1,5 @@
 from ST2_Model import ViT1D_Model
-from SingleSerialDataset import SerialDataset
+from SingleFeatureDataset import SerialDataset
 from torch.utils.data import DataLoader, Dataset
 from sklearn import preprocessing
 import torch
@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import copy
 import Visualizer
 from sklearn.metrics import mean_absolute_percentage_error
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 batch_size = 16
 epochs = 2
@@ -47,8 +48,7 @@ def scaling(raw_data):
 
 
 def main():
-
-    price_df = pd.read_csv('../stock_fetching/SPX.csv')
+    price_df = pd.read_csv('../stock_fetching/SPX-10.csv')
     price = price_df['close'].tolist()
     price = np.array(price)
 
@@ -111,7 +111,7 @@ def main():
                 test_MAPE_loss += MAPE_loss
 
         print(
-            f"evaluate_set --> MSE_loss:{round(test_MSE_loss / len(test_loader), 3)}, MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}({round((test_MAPE_loss / len(test_loader))*100,2)}%)")
+            f"evaluate_set --> MSE_loss:{round(test_MSE_loss / len(test_loader), 3)}, MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}({round((test_MAPE_loss / len(test_loader)) * 100, 2)}%)")
     # train finished
     # Visualizer.visualizer(train, test, 5, time_step, st2, device=device)
 

@@ -53,7 +53,7 @@ def main():
     # df = pd.read_csv('../datas/airline_passengers.csv')
     # airline_passengers = df['Passengers'].tolist()
     features = ['open', 'close', 'high', 'low', 'change', 'pct_chg']
-    price_df = pd.read_csv('../stock_fetching/SPX.csv')
+    price_df = pd.read_csv('../stock_fetching/SPX-10.csv')
 
     features_ = [np.array(price_df[feature]) for feature in features]
     features = [scaling(feature) for feature in features_]

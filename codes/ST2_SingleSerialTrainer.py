@@ -1,5 +1,5 @@
 from ST2_Model import ViT1D_Model
-from SingleSerialDataset import SerialDataset
+from SingleFeatureDataset import SerialDataset
 from torch.utils.data import DataLoader, Dataset
 from sklearn import preprocessing
 import torch
@@ -50,7 +50,7 @@ def scaling(raw_data):
 
 def main():
 
-    price_df = pd.read_csv('../stock_fetching/SPX.csv')
+    price_df = pd.read_csv('../stock_fetching/SPX-10.csv')
     price = price_df['close'].tolist()
     price = np.array(price)
 

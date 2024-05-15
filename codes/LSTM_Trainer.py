@@ -1,5 +1,5 @@
 from ST2_Model import ViT1D_Model
-from SingleSerialDataset import SerialDataset
+from SingleFeatureDataset import SerialDataset
 from torch.utils.data import DataLoader, Dataset
 from sklearn import preprocessing
 import torch
@@ -29,7 +29,7 @@ def main():
     # sin_test = np.sin(np.arange(500) * 0.02) + np.random.randn(500) * 0.02
     # df = pd.read_csv('../datas/airline_passengers.csv')
     # airline_passengers = df['Passengers'].tolist()
-    price_df = pd.read_csv('../stock_fetching/SPX.csv')
+    price_df = pd.read_csv('../stock_fetching/SPX-10.csv')
     price = price_df['close'].tolist()
     price = np.array(list(reversed(price)))
     # airline_passengers = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.3

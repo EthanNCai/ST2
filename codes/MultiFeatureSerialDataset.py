@@ -52,7 +52,7 @@ def main():
     # sin_serial = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.1
     # , Unnamed: 0, ts_code, trade_date, open, close, high, low, pre_close, change, pct_chg, swing, vol
     features = ['open', 'close', 'high', 'low', 'change', 'pct_chg']
-    price_df = pd.read_csv('../stock_fetching/SPX.csv')
+    price_df = pd.read_csv('../stock_fetching/SPX-10.csv')
 
     features_ = [np.array(price_df[feature]) for feature in features]
     features = [scaling(feature) for feature in features_]
