@@ -27,7 +27,7 @@ if time_step % patch_size != 0:
     print("invalid patch size ! time_step % patch_size must equal to 0")
     quit()
 
-st2 = ViT1D_Model(
+vit1d = ViT1D_Model(
     seq_len=time_step,
     patch_size=patch_size,
     num_classes=1,
@@ -93,9 +93,9 @@ def main():
     print(f"{len(test_loader)=}")
 
     criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(st2.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(vit1d.parameters(), lr=learning_rate)
     for epoch_index in range(epochs):
-        st2.train()
+        vit1d.train()
         for batch_index, (data, target) in enumerate(train_loader):
             # data -> (batch, channel (features), len)
 
@@ -108,7 +108,7 @@ def main():
             # print(data.shape)
             # quit()
 
-            output = st2(data)
+            output = vit1d(data)
 
             output = output.squeeze(-1)
 
@@ -129,7 +129,7 @@ def main():
 
                 # torch.Size([32, channel (features), 256])
                 target = target.to(device).to(dtype=torch.float32)
-                output = st2(data)
+                output = vit1d(data)
                 output = output.squeeze(-1)
                 MSE_loss = criterion(output, target)
                 MAPE_loss = mean_absolute_percentage_error(output.cpu(), target.cpu())

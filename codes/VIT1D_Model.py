@@ -76,7 +76,7 @@ class Transformer(nn.Module):
 
 ## class mean_pooling ~
 
-class ViT1D_Model(nn.Module):
+class VIT1D_Model(nn.Module):
     def __init__(self, *, seq_len, patch_size, num_classes, dim, depth, heads, mlp_dim, channels=1, dim_head=64,
                  dropout=0., emb_dropout=0.):
         super().__init__()
@@ -137,7 +137,7 @@ def test_case():
     patch_size = 16
     patch_token_dim = 1024
 
-    st2 = ViT1D_Model(
+    vit1d = VIT1D_Model(
         seq_len=time_step,
         patch_size=patch_size,
         num_classes=time_step,
@@ -152,6 +152,6 @@ def test_case():
     time_points = torch.randn(time_step).unsqueeze(0).unsqueeze(0).to(dtype=torch.float32)
     # tensor -> (batch, channels, len)
     semantic_info = []
-    out = st2(time_points, semantic_info)
+    out = vit1d(time_points, semantic_info)
 
 # test_case()
