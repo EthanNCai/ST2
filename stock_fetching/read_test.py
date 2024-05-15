@@ -1,6 +1,6 @@
 import pandas as pd
 
-OUTPUT_NAME = './SPX.csv'
+OUTPUT_NAME = './SPX-10.csv'
 
 df1 = pd.read_csv('./SPX_20040401_20240401.csv')
 df2 = pd.read_csv('./SPX_20040401_20080508.csv')

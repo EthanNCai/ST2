@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from torch import nn
 import torch
@@ -11,21 +12,23 @@ model = SentenceTransformer(model_name_or_path='/home/cjz/models/bert-base-chine
 # print(model.max_seq_length)
 
 #Our sentences we like to encode
-news = [
-    '今天股票要大涨',
-    '今天股票感觉势头不错',
-    'A股今天有潜力',
-    'A股今天有潜力'
-]
 
+
+batch_size = 2
+
+news = [
+    ['今天股票要大涨',
+    '今天股票感觉势头不错',
+    'A股今天有潜力'],
+    ['A股今天有潜力']
+]
 
 m = nn.AdaptiveMaxPool1d(output_size=1)
 
-#Sentences are encoded by calling model.encode()
-embeddings = model.encode(news)
+embeddings = np.array(model.encode(news_) for news_ in news)
 
 # (C, L) -> (B, L, C)
-embeddings = torch.tensor(embeddings).unsqueeze(0)
+# embeddings = torch.tensor(embeddings).unsqueeze(0)
 
 # (B, C, L) -> (B, L, C)
 embeddings = embeddings.permute(0, 2, 1)

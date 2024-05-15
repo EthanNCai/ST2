@@ -8,11 +8,8 @@ m = nn.AdaptiveMaxPool1d(1)
 input = torch.randn(32, 1, 12)
 output = m(input)
 
-
-
 print(input.shape)
 print(output.shape)
-
 
 input2 = torch.randn(32, 1, 142)
 output2 = m(input2)

@@ -32,6 +32,7 @@ for index, row in df.iterrows():
 #     df.loc[i] = vec
 
 # print(time_to_news_dict['2024-03-31'])
-
+#
+# print(news_dict['2024-03-31'])
 with open('news_dict.pickle', 'wb') as f:
     pickle.dump(news_dict, f)
