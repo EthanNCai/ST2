@@ -8,6 +8,7 @@ import pickle
 import collections
 import contextlib
 import re
+from ST2_Model import ST2
 import torch
 from TEU import TextExtractionUnit
 
@@ -74,7 +75,16 @@ class SingleFeatureSerialDatasetForST2(Dataset):
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    batch_size = 16
+    batch_size = 3
+    epochs = 4
+    time_step = 4
+    patch_size = 4
+    patch_token_dim = 32
+    mlp_dim = 64
+    learning_rate = 0.001
+    target_mean_len = 1
+    train_test_ratio = 0.8
+    dropout = 0.1
 
     stock_df = pd.read_csv('../stock_fetching/SPX-10.csv')
 
@@ -91,11 +101,26 @@ def main():
 
     serial_dataset = SingleFeatureSerialDatasetForST2(raw_serial=price,
                                                       date_stamps=dates,
-                                                      time_step=3,
+                                                      time_step=time_step,
                                                       target_mean_len=1,
                                                       to_tensor=True, )
 
     serial_dataloader = DataLoader(serial_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+
+
+
+    # st2 = ST2(
+    #     seq_len=time_step,
+    #     patch_size=patch_size,
+    #     num_classes=1,
+    #     channels=1,
+    #     dim=patch_token_dim,
+    #     depth=8,
+    #     heads=8,
+    #     mlp_dim=mlp_dim,
+    #     dropout=dropout,
+    #     emb_dropout=dropout
+    # ).to(device)
 
     for i, (data, target, corresponding_dates) in enumerate(serial_dataloader):
         # data -> (B, L)  len is actually
@@ -104,22 +129,29 @@ def main():
         # print(data.shape)
 
         # load news strings
-        news = []
+        batched_news = []
         for _ in range(batch_size):
-            news.append([])
+            batched_news.append([])
         for corresponding_date in corresponding_dates:
             for b in range(batch_size):
-                if corresponding_date[b] in news:
-                    news[b].extend(news_dict[corresponding_date[b]])
+                if False and corresponding_date[b] in news_dict:
+                    batched_news[b].extend(news_dict[corresponding_date[b]])
                 else:
-                    news[b].extend([' '])
+                    batched_news[b].extend([' '])
 
-        news_embeddings = torch.concat([teu(new) for new in news], dim=0)
 
-        # model(data, news_embeddings)
+        # desired ->
+        print("news >>> ", batched_news)
 
-        print("news_embeddings >>> ", news_embeddings.shape)
-        assert len(news) == batch_size
+        """
+        HERE !!!! 2024.5.16 night
+        """
+
+        # output = st2(data, news_embeddings)
+
+
+        break
+        assert len(batched_news) == batch_size
 
 
 if __name__ == '__main__':

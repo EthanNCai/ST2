@@ -1,5 +1,5 @@
-from ST2_Model import ViT1D_Model
-from SingleFeatureDataset import SerialDataset
+from ST2_Model import ST2
+from SingleFeatureST2Dataset import SingleFeatureSerialDatasetForST2, date_converter
 from torch.utils.data import DataLoader, Dataset
 from sklearn import preprocessing
 import torch
@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 import Visualizer
+import pickle
+from TEU import TextExtractionUnit
 from sklearn.metrics import mean_absolute_percentage_error
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -28,7 +30,7 @@ if time_step % patch_size != 0:
     print("invalid patch size ! time_step % patch_size must equal to 0")
     quit()
 
-st2 = ViT1D_Model(
+st2 = ST2(
     seq_len=time_step,
     patch_size=patch_size,
     num_classes=1,
@@ -41,6 +43,9 @@ st2 = ViT1D_Model(
     emb_dropout=dropout
 ).to(device)
 
+# teu = TextExtractionUnit('/home/cjz/models/bert-base-chinese/', dim_input=768, dim_output=1024).to(device)
+teu = TextExtractionUnit('../google-bert/bert-base-chinese/', dim_input=768, dim_output=1024).to(device)
+
 
 def scaling(raw_data):
     scaler = preprocessing.MinMaxScaler()
@@ -49,10 +54,16 @@ def scaling(raw_data):
 
 
 def main():
+    stock_df = pd.read_csv('../stock_fetching/SPX-10.csv')
 
-    price_df = pd.read_csv('../stock_fetching/SPX-10.csv')
-    price = price_df['close'].tolist()
+    price = stock_df['close'].tolist()
+    dates = stock_df['trade_date'].tolist()
+
+    dates = [date_converter(str(date)) for date in dates]
     price = np.array(price)
+
+    with open('../datas/news_dict.pickle', 'rb') as f:
+        news_dict = pickle.load(f)
 
     raw_data = scaling(price)
 
@@ -61,13 +72,17 @@ def main():
     # print(len(raw_data))
     test = raw_data[int(len(raw_data) * train_test_ratio):]
     train = raw_data[:int(len(raw_data) * train_test_ratio)]
+    dates_test = dates[int(len(dates) * train_test_ratio):]
+    dates_train = dates[:int(len(dates) * train_test_ratio)]
 
-    train_serial = SerialDataset(train, time_step=time_step,
-                                 target_mean_len=target_mean_len,
-                                 to_tensor=True)
-    test_serial = SerialDataset(test, time_step=time_step,
-                                target_mean_len=target_mean_len,
-                                to_tensor=True)
+    train_serial = SingleFeatureSerialDatasetForST2(train, time_step=time_step,
+                                                    target_mean_len=target_mean_len,
+                                                    date_stamps=dates_train,
+                                                    to_tensor=True)
+    test_serial = SingleFeatureSerialDatasetForST2(test, time_step=time_step,
+                                                   target_mean_len=target_mean_len,
+                                                   date_stamps=dates_test,
+                                                   to_tensor=True)
     train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=False, num_workers=2,
                               drop_last=True)
     test_loader = DataLoader(test_serial, batch_size=batch_size, shuffle=True, num_workers=2,
