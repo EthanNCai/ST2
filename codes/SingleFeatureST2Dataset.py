@@ -9,11 +9,12 @@ import collections
 import contextlib
 import re
 import torch
-from NEU import NewsExtractionUnit
+from TEU import TextExtractionUnit
 
 
 def get_news(news):
     return news
+
 
 def scaling(raw_data):
     scaler = preprocessing.MinMaxScaler()
@@ -24,9 +25,6 @@ def scaling(raw_data):
 def date_converter(raw_date):
     date_obj = datetime.strptime(raw_date, "%Y%m%d")
     return date_obj.strftime("%Y-%m-%d")
-
-
-
 
 
 class SingleFeatureSerialDatasetForST2(Dataset):
@@ -66,7 +64,7 @@ class SingleFeatureSerialDatasetForST2(Dataset):
 
         dates = self.stepped_serial_data_date_stamp[i]
 
-        print('get_item >>>',dates)
+        # print('get_item >>>',dates)
         if self.to_tensor:
             return torch.tensor(data).double(), torch.tensor(target).double(), dates
         else:
@@ -76,7 +74,7 @@ class SingleFeatureSerialDatasetForST2(Dataset):
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    batch_size = 2
+    batch_size = 16
 
     stock_df = pd.read_csv('../stock_fetching/SPX-10.csv')
 
@@ -88,14 +86,16 @@ def main():
 
     with open('../datas/news_dict.pickle', 'rb') as f:
         news_dict = pickle.load(f)
-    neu = NewsExtractionUnit('/home/cjz/models/bert-base-chinese/', dim_input=768, dim_output=1024).to(device)
+    # teu = TextExtractionUnit('/home/cjz/models/bert-base-chinese/', dim_input=768, dim_output=1024).to(device)
+    teu = TextExtractionUnit('../google-bert/bert-base-chinese/', dim_input=768, dim_output=1024).to(device)
+
     serial_dataset = SingleFeatureSerialDatasetForST2(raw_serial=price,
                                                       date_stamps=dates,
                                                       time_step=3,
                                                       target_mean_len=1,
-                                                      to_tensor=True,)
+                                                      to_tensor=True, )
 
-    serial_dataloader = DataLoader(serial_dataset, batch_size=2, shuffle=True, num_workers=2)
+    serial_dataloader = DataLoader(serial_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 
     for i, (data, target, corresponding_dates) in enumerate(serial_dataloader):
         # data -> (B, L)  len is actually
@@ -109,16 +109,17 @@ def main():
             news.append([])
         for corresponding_date in corresponding_dates:
             for b in range(batch_size):
-                news[b].extend(news_dict[corresponding_date[b]])
+                if corresponding_date[b] in news:
+                    news[b].extend(news_dict[corresponding_date[b]])
+                else:
+                    news[b].extend([' '])
 
-        # embed news using News Extraction Unit (NEU)
-        news_embeddings = torch.concat([neu(new) for new in news], dim=0)
+        news_embeddings = torch.concat([teu(new) for new in news], dim=0)
 
         # model(data, news_embeddings)
 
-        print(news)
+        print("news_embeddings >>> ", news_embeddings.shape)
         assert len(news) == batch_size
-        break
 
 
 if __name__ == '__main__':

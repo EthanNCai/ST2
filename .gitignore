@@ -12,5 +12,6 @@ weiboSpider/weibo/*
 weiboSpider/tests/*
 weiboSpider/weibo.db
 *.log
-
+/google-bert/*
+/google-bert/
 .idea
