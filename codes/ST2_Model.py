@@ -76,7 +76,7 @@ class Transformer(nn.Module):
 
 ## class mean_pooling ~
 
-class ViT1D_Model(nn.Module):
+class ST2(nn.Module):
     def __init__(self, *, seq_len, patch_size, num_classes, dim, depth, heads, mlp_dim, channels=1, dim_head=64,
                  dropout=0., emb_dropout=0.):
         super().__init__()
@@ -105,7 +105,11 @@ class ViT1D_Model(nn.Module):
             nn.Linear(dim, num_classes)
         )
 
-    def forward(self, time_series):
+    def forward(self, time_series, texts):
+
+        # PART 1 -> encode the texts using TE (text extractor)
+
+        # PART 2 -> encode the time series patches
         x = self.to_patch_embedding(time_series)
         # patched and flattened x -> torch.Size([1, 1024])
         n_batch, n_channel, _ = x.shape
@@ -118,6 +122,12 @@ class ViT1D_Model(nn.Module):
         # packed_x      -> torch.Size([1, 17, 1024])
         # ps -> pack information that can be used to later de-packing operation
 
+        # PART 3 -> concat texts embeddings and time series embeddings
+
+        # PART 4 -> Positional embedding
+
+        # PART 5 -> final output
+
         x += self.pos_embedding[:, :(n_channel + 1)]
         # pos_embedding                 -> torch.Size([1, 17, 1024])
         # pos_embedding[:, :(n_channel + 1)]    -> torch.Size([1, 17, 1024])
@@ -128,6 +138,8 @@ class ViT1D_Model(nn.Module):
 
         cls_tokens, _ = unpack(x, ps, 'b * d')
 
+
+
         return self.mlp_head(cls_tokens)
 
 
@@ -137,7 +149,7 @@ def test_case():
     patch_size = 16
     patch_token_dim = 1024
 
-    st2 = ViT1D_Model(
+    st2 = ST2(
         seq_len=time_step,
         patch_size=patch_size,
         num_classes=time_step,
