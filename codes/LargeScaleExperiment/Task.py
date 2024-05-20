@@ -1,5 +1,5 @@
 class Task:
-    def __init__(self):
+    def __init__(self, dict_in:dict):
         self.config_dict = {
             "batch_size": 16,
             "epochs": 100,
@@ -13,10 +13,14 @@ class Task:
             "dropout": 0.1,
             "alpha": 0.5,
             "teu_dropout": 0.15,
-            "pooling_mode": "max",
+            "pooling_mode": "avg",
             "text_embeddings_dim": 128,
             "shuffle_train": True,
         }
+
+        for k,v in dict_in.items():
+            self.config_dict.update({k: v})
+
         self.result = []
     def append_result(self,eval_mes,eval_mape):
         self.result.append((eval_mes,eval_mape))

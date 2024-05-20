@@ -81,7 +81,7 @@ class Transformer(nn.Module):
 class ST2(nn.Module):
     def __init__(self, *, seq_len, patch_size, num_classes, dim, depth, heads, mlp_dim, channels=1, dim_head=64,
                  dropout=0., emb_dropout=0., text_emb_model_path='../google-bert/bert-base-chinese/',
-                 text_embeddings_dim=32,alpha = 0.1,teu_dropout,pooling_mode):
+                 token_dim=32, alpha = 0.1, teu_dropout, pooling_mode):
         super().__init__()
         assert (seq_len % patch_size) == 0
 
@@ -98,10 +98,9 @@ class ST2(nn.Module):
         )
         self.patch_size = patch_size
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
-        self.cls_token_patch = nn.Parameter(torch.randn(dim))
-        self.cls_token_unified = nn.Parameter(torch.randn(text_embeddings_dim))
+        self.cls_token_unified = nn.Parameter(torch.randn(token_dim))
         self.dropout = nn.Dropout(emb_dropout)
-        self.teu = TextExtractionUnit(text_emb_model_path, dim_input=768, dropout=teu_dropout,pooling_mode=pooling_mode,dim_output=text_embeddings_dim).to('cuda')
+        self.teu = TextExtractionUnit(text_emb_model_path, dim_input=768, dropout=teu_dropout, pooling_mode=pooling_mode, dim_output=token_dim).to('cuda')
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
 
@@ -152,7 +151,9 @@ class ST2(nn.Module):
         # PART 4 -> Positional embedding0
         # alpha = 0.05
 
-        concat_embeddings = (1 - self.alpha) * patch_embeddings + self.alpha * texts_embeddings_tensor
+        concat_embeddings = 0 * patch_embeddings + 0 * texts_embeddings_tensor
+
+        concat_embeddings = torch.randn(texts_embeddings_tensor.shape).to('cuda')
 
         # print(concat_embeddings.shape)
         # pos_embedding                 -> torch.Size([1, 17, 1024])
@@ -191,7 +192,7 @@ def test_case():
         mlp_dim=1024,
         dropout=0.1,
         emb_dropout=0.1,
-        text_embeddings_dim=1024,
+        token_dim=1024,
         text_emb_model_path='../google-bert/bert-base-chinese/'
     )
     time_points_batch_2 = torch.concat([torch.randn(time_step).unsqueeze(0).unsqueeze(0).to(dtype=torch.float32),

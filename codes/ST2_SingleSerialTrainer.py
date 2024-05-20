@@ -15,9 +15,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 16
 epochs = 100
-time_step = 64
-patch_size = 4
-patch_token_dim = 128
+time_step = 10
+patch_size = 2
+token_dim = 32
 mlp_dim = 32
 learning_rate = 0.001
 target_mean_len = 1
@@ -25,7 +25,6 @@ train_test_ratio = 0.8
 dropout = 0.1
 alpha = 0.5
 teu_dropout = 0.15
-text_embeddings_dim = 128
 pooling_mode = "max"
 stock = 'SPX'
 shuffle_train = True
@@ -41,14 +40,14 @@ st2 = ST2(
     patch_size=patch_size,
     num_classes=1,
     channels=1,
-    dim=patch_token_dim,
+    dim=token_dim,
     depth=8,
     heads=8,
     mlp_dim=mlp_dim,
     dropout=dropout,
     emb_dropout=dropout,
     text_emb_model_path='/home/cjz/models/bert-base-chinese/',
-    text_embeddings_dim =text_embeddings_dim,
+    token_dim=token_dim,
     alpha=alpha,
     teu_dropout=teu_dropout,
     pooling_mode=pooling_mode,
@@ -69,7 +68,7 @@ def main():
     print(f"  epochs: {epochs}")
     print(f"  time_step: {time_step}")
     print(f"  patch_size: {patch_size}")
-    print(f"  patch_token_dim: {patch_token_dim}")
+    print(f"  token_dim: {token_dim}")
     print(f"  mlp_dim: {mlp_dim}")
     print(f"  learning_rate: {learning_rate}")
     print(f"  target_mean_len: {target_mean_len}")
@@ -78,7 +77,6 @@ def main():
     print(f"  alpha: {alpha}")
     print(f"  teu_dropout: {teu_dropout}")
     print(f"  pooling_mode: {pooling_mode}")
-    print(f"  text_embeddings_dim: {text_embeddings_dim}")
     print(f"  shuffle_train: {shuffle_train}")
     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 
@@ -137,11 +135,11 @@ def main():
             output = output.squeeze(-1)
 
             loss = criterion(output, target)
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            # print(
-            #     f"batch:{i}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
+            optimizer.zero_grad()
+            print(
+                f"batch:{i}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
 
         st2.eval()
         # with torch.no_grad():
