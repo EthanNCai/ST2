@@ -12,6 +12,23 @@ from ST2_Model import ST2
 import torch
 from TEU import TextExtractionUnit
 
+def load_the_news(batch_size,patch_size, corresponding_dates, news_dict):
+
+    batched_news = []
+    for _ in range(batch_size):
+        batched_news.append([])
+    for corresponding_date in corresponding_dates:
+        for b in range(batch_size):
+            if False and corresponding_date[b] in news_dict:
+                batched_news[b].extend(news_dict[corresponding_date[b]])
+            else:
+                batched_news[b].extend([' '])
+    # patching the batched news
+    patched_news = []
+    for news_batch in batched_news:
+        patched_news.append([news_batch[i:i + patch_size] for i in range(0, len(news_batch), patch_size)])
+    return patched_news
+
 
 def get_news(news):
     return news
@@ -78,8 +95,8 @@ def main():
     batch_size = 3
     epochs = 4
     time_step = 4
-    patch_size = 4
-    patch_token_dim = 32
+    patch_size = 2
+    patch_token_dim = 1024
     mlp_dim = 64
     learning_rate = 0.001
     target_mean_len = 1
@@ -96,8 +113,8 @@ def main():
 
     with open('../datas/news_dict.pickle', 'rb') as f:
         news_dict = pickle.load(f)
-    # teu = TextExtractionUnit('/home/cjz/models/bert-base-chinese/', dim_input=768, dim_output=1024).to(device)
-    teu = TextExtractionUnit('../google-bert/bert-base-chinese/', dim_input=768, dim_output=1024).to(device)
+    teu = TextExtractionUnit('/home/cjz/models/bert-base-chinese/', dim_input=768, dim_output=1024).to(device)
+    # teu = TextExtractionUnit('../google-bert/bert-base-chinese/', dim_input=768, dim_output=1024).to(device)
 
     serial_dataset = SingleFeatureSerialDatasetForST2(raw_serial=price,
                                                       date_stamps=dates,
@@ -128,7 +145,7 @@ def main():
         data = data.unsqueeze(1)
         # print(data.shape)
 
-        # load news strings
+        # batching the news
         batched_news = []
         for _ in range(batch_size):
             batched_news.append([])
@@ -138,20 +155,35 @@ def main():
                     batched_news[b].extend(news_dict[corresponding_date[b]])
                 else:
                     batched_news[b].extend([' '])
-
+        # patching the batched news
+        patched_news = []
+        for news_batch in batched_news:
+            patched_news.append([news_batch[i:i + patch_size] for i in range(0, len(news_batch), patch_size)])
 
         # desired ->
-        print("news >>> ", batched_news)
+        print("batched_news >>> ", batched_news)
+        print("patched_news >>> ", patched_news)
 
+        # batched_news >> > [[' ', ' ', ' ', ' '], [' ', ' ', ' ', ' '], [' ', ' ', ' ', ' ']]
+        # patched_news >> > [[[' ', ' '], [' ', ' ']], [[' ', ' '], [' ', ' ']], [[' ', ' '], [' ', ' ']]]
+
+        news_embeddings_list = []
+        for news_batch in patched_news:
+            news_embeddings_list.append(torch.concat([teu(news_patch) for news_patch in news_batch], dim=0))
+        news_embeddings_tensor = torch.concat([patch_embedding for patch_embedding in news_embeddings_list], dim=0)
+        news_embeddings_tensor = news_embeddings_tensor.view(batch_size,time_step//patch_size, -1)
+        # print(news_embeddings_tensor.shape)
+
+        # desired shape ==> [B,P,L]
+        # print(text_embeddings)
         """
         HERE !!!! 2024.5.16 night
         """
 
         # output = st2(data, news_embeddings)
 
-
-        break
         assert len(batched_news) == batch_size
+        break
 
 
 if __name__ == '__main__':

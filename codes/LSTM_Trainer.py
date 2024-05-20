@@ -1,4 +1,4 @@
-from ST2_Model import ViT1D_Model
+# from ST2_Model import ViT1D_Model
 from SingleFeatureDataset import SerialDataset
 from torch.utils.data import DataLoader, Dataset
 from sklearn import preprocessing
@@ -15,8 +15,8 @@ from LSTM_Model import SimpleLSTM
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 16
-epochs = 2
-time_step = 128
+epochs = 100
+time_step = 64
 learning_rate = 0.001
 target_mean_len = 1
 train_test_ratio = 0.8
@@ -54,7 +54,7 @@ def main():
     test_serial = SerialDataset(test, time_step=time_step,
                                 target_mean_len=target_mean_len,
                                 to_tensor=True)
-    train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=False, num_workers=2,
+    train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=True, num_workers=2,
                               drop_last=True)
     test_loader = DataLoader(test_serial, batch_size=batch_size, shuffle=True, num_workers=2,
                              drop_last=True)
@@ -80,8 +80,8 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            print(
-                f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
+            # print(
+            #     f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
 
         lstm.eval()
 

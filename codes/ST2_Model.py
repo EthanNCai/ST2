@@ -81,13 +81,13 @@ class Transformer(nn.Module):
 class ST2(nn.Module):
     def __init__(self, *, seq_len, patch_size, num_classes, dim, depth, heads, mlp_dim, channels=1, dim_head=64,
                  dropout=0., emb_dropout=0., text_emb_model_path='../google-bert/bert-base-chinese/',
-                 text_embeddings_dim=1024):
+                 text_embeddings_dim=32,alpha = 0.1,teu_dropout,pooling_mode):
         super().__init__()
         assert (seq_len % patch_size) == 0
 
         num_patches = seq_len // patch_size
         patch_dim = channels * patch_size
-
+        self.alpha = alpha
         self.to_patch_embedding = nn.Sequential(
             Rearrange('b c (n p) -> b n (p c)', p=patch_size),
             nn.LayerNorm(patch_dim),
@@ -96,12 +96,12 @@ class ST2(nn.Module):
             nn.Linear(dim, dim),
             nn.LayerNorm(dim),
         )
-
+        self.patch_size = patch_size
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
         self.cls_token_patch = nn.Parameter(torch.randn(dim))
-        self.cls_token_text = nn.Parameter(torch.randn(text_embeddings_dim))
+        self.cls_token_unified = nn.Parameter(torch.randn(text_embeddings_dim))
         self.dropout = nn.Dropout(emb_dropout)
-        self.teu = TextExtractionUnit(text_emb_model_path, dim_input=768, dim_output=text_embeddings_dim).to('cuda')
+        self.teu = TextExtractionUnit(text_emb_model_path, dim_input=768, dropout=teu_dropout,pooling_mode=pooling_mode,dim_output=text_embeddings_dim).to('cuda')
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
 
@@ -111,7 +111,7 @@ class ST2(nn.Module):
         )
         self.to('cuda')
 
-    def forward(self, time_series, texts):
+    def forward(self, time_series, patched_news):
         # PART 1 -> encode the texts using TE (text extractor)
 
         # PART 2 -> encode the time series patches
@@ -119,10 +119,10 @@ class ST2(nn.Module):
         # patched and flattened x -> torch.Size([1, 1024])
         n_batch, n_channel, _ = patch_embeddings.shape
 
-        cls_patch_tokens = repeat(self.cls_token_patch, 'd -> b d', b=n_batch)
-        cls_texts_tokens = repeat(self.cls_token_text, 'd -> b d', b=n_batch)
+        # cls_patch_tokens = repeat(self.cls_token_patch, 'd -> b d', b=n_batch)
+        cls_token_unified = repeat(self.cls_token_unified, 'd -> b d', b=n_batch)
 
-        patch_embeddings, ps_patch = pack([cls_patch_tokens, patch_embeddings], 'b * d')
+        # patch_embeddings, ps_patch = pack([cls_patch_tokens, patch_embeddings], 'b * d')
         # cls_patch_tokens    -> torch.Size([1, 1024])
         # x             -> torch.Size([1, 16, 1024])
         # packed_x      -> torch.Size([1, 17, 1024])
@@ -130,28 +130,50 @@ class ST2(nn.Module):
 
         # PART 3 -> concat texts embeddings and time series embeddings
 
-        text_embeddings = torch.concat([self.teu(text) for text in texts], dim=0)
-        text_embeddings, ps_text = pack([cls_texts_tokens, text_embeddings], 'b * d')
 
-        print('text_embeddings.shape', text_embeddings.shape)
-        print('patch_embeddings.shape', patch_embeddings.shape)
+        batch_size = len(patched_news)
+        n_patches = len(patched_news[0])
+        time_steps = self.patch_size * n_patches
 
-        # PART 4 -> Positional embedding
-        concat_embeddings = torch.add(patch_embeddings, text_embeddings)
+        news_embeddings_list = []
+        for news_batch in patched_news:
+            news_embeddings_list.append(torch.concat([self.teu(news_patch) for news_patch in news_batch], dim=0))
+        texts_embeddings_tensor = torch.concat([patch_embedding for patch_embedding in news_embeddings_list], dim=0)
+        texts_embeddings_tensor = texts_embeddings_tensor.view(batch_size, time_steps // self.patch_size, -1)
 
-        concat_embeddings += self.pos_embedding[:, :(n_channel + 1)]
+        # print('text_embeddings.shape', text_embeddings.shape)
+        # print('patch_embeddings.shape', patch_embeddings.shape)
+
+        # text_embeddings.shape
+        # torch.Size([16, 65, 1024])
+        # patch_embeddings.shape
+        # torch.Size([16, 65, 1024])
+
+        # PART 4 -> Positional embedding0
+        # alpha = 0.05
+
+        concat_embeddings = torch.add(patch_embeddings * (1-self.alpha), texts_embeddings_tensor * self.alpha)
+
+        # print(concat_embeddings.shape)
+
+
         # pos_embedding                 -> torch.Size([1, 17, 1024])
         # pos_embedding[:, :(n_channel + 1)]    -> torch.Size([1, 17, 1024])
 
-        # PART 5 -> final output
+        # [CLS] token insertion
+        concat_embeddings_cls_included , ps = pack([cls_token_unified, concat_embeddings], 'b * d')
 
-        concat_embeddings = self.dropout(concat_embeddings)
-        concat_embeddings = self.transformer(concat_embeddings)
-        # x -> torch.Size([1, 17, 1024])
+        # position embedding
+        concat_embeddings_cls_included += self.pos_embedding[:, :(n_channel + 1)]
+        concat_embeddings_cls_included = self.dropout(concat_embeddings_cls_included)
 
-        cls_patch_tokens, _ = unpack(concat_embeddings, ps_patch, 'b * d')
+        # Transformer encoding
+        concat_embeddings_cls_included = self.transformer(concat_embeddings_cls_included)
 
-        return self.mlp_head(cls_patch_tokens)
+        # pick [CLS] token
+        cls_token, _ = unpack(concat_embeddings_cls_included, ps, 'b * d')
+
+        return self.mlp_head(cls_token)
 
 
 def test_case():
@@ -178,7 +200,8 @@ def test_case():
                                 torch.randn(time_step).unsqueeze(0).unsqueeze(0).to(dtype=torch.float32)],dim=0).to('cuda')
     print('time_points_batch_2.shape', time_points_batch_2.shape)
 
-    texts_batch_2 = [['你好1', '你好2'], ['你好3', '你好4', '你好5']]
-    out = st2(time_points_batch_2, texts_batch_2)
+    # texts_batch_2 = [['你好1', '你好2'], ['你好3', '你好4', '你好5']]
+    # texts_batch_2 = load_the_news(time_points_batch_2, texts_batch_2)
+    # out = st2(time_points_batch_2, texts_batch_2)
 
 # test_case()

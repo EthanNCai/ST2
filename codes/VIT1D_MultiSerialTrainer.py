@@ -84,7 +84,7 @@ def main():
                                       target_mean_len=target_mean_len,
                                       features=6,
                                       to_tensor=True)
-    train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=False, num_workers=2,
+    train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=True, num_workers=2,
                               drop_last=True)
     test_loader = DataLoader(test_serial, batch_size=batch_size, shuffle=True, num_workers=2,
                              drop_last=True)

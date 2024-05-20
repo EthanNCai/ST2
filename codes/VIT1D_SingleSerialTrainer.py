@@ -1,4 +1,4 @@
-from ST2_Model import ViT1D_Model
+from VIT1D_Model import VIT1D_Model
 from SingleFeatureDataset import SerialDataset
 from torch.utils.data import DataLoader, Dataset
 from sklearn import preprocessing
@@ -13,21 +13,22 @@ from sklearn.metrics import mean_absolute_percentage_error
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 batch_size = 16
-epochs = 2
-time_step = 256
+epochs = 100
+time_step = 64
 patch_size = 4
 patch_token_dim = 32
-mlp_dim = 64
+mlp_dim = 32
 learning_rate = 0.001
 target_mean_len = 1
 train_test_ratio = 0.8
 dropout = 0.1
+# teu_dropout = 0.1
 
 if time_step % patch_size != 0:
     print("invalid patch size ! time_step % patch_size must equal to 0")
     quit()
 
-vit1d = ViT1D_Model(
+vit1d = VIT1D_Model(
     seq_len=time_step,
     patch_size=patch_size,
     num_classes=1,
@@ -46,24 +47,35 @@ def scaling(raw_data):
     raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
     return raw_data.reshape(-1)
 
+def read_stock_np(path):
+    price_df = pd.read_csv(path)
+    price = price_df['close'].tolist()
+    return np.array(price)
 
 def main():
-    price_df = pd.read_csv('../stock_fetching/SPX-10.csv')
-    price = price_df['close'].tolist()
-    price = np.array(price)
+    spx_price = read_stock_np('../stock_fetching/SPX-10.csv')
+    # nasdaq_price = read_stock_np('../stock_fetching/IXIC-10.csv')
+    # dji_price = read_stock_np('../stock_fetching/DJI-10.csv')
+    # hsi_price = read_stock_np('../stock_fetching/HSI-10.csv')
 
-    raw_data = scaling(price)
 
-    print('raw amount >>>', len(raw_data))
-    print('train amount >>>', int(len(raw_data) * train_test_ratio))
+    spx_raw_data = scaling(spx_price)
+    # nasdaq_raw_data = scaling(nasdaq_price)
+    # dji_raw_data = scaling(dji_price)
+    # hsi_raw_data = scaling(hsi_price)
+
     # print(len(raw_data))
-    test = raw_data[int(len(raw_data) * train_test_ratio):]
-    train = raw_data[:int(len(raw_data) * train_test_ratio)]
+    spx_test = spx_raw_data[int(len(spx_raw_data) * train_test_ratio):]
+    spx_train = spx_raw_data[:int(len(spx_raw_data) * train_test_ratio)]
+    # train = np.concatenate((spx_train, nasdaq_raw_data, dji_raw_data, hsi_raw_data))
 
-    train_serial = SerialDataset(train, time_step=time_step,
+    print('test amount >>>', len(spx_test))
+    print('train amount >>>', len(spx_train))
+
+    train_serial = SerialDataset(spx_train, time_step=time_step,
                                  target_mean_len=target_mean_len,
                                  to_tensor=True)
-    test_serial = SerialDataset(test, time_step=time_step,
+    test_serial = SerialDataset(spx_test, time_step=time_step,
                                 target_mean_len=target_mean_len,
                                 to_tensor=True)
     train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=False, num_workers=2,
@@ -92,8 +104,8 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            print(
-                f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
+            # print(
+            #     f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
 
         # st2.eval()
 
