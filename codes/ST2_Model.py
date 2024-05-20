@@ -152,7 +152,7 @@ class ST2(nn.Module):
         # PART 4 -> Positional embedding0
         # alpha = 0.05
 
-        concat_embeddings = torch.add(patch_embeddings * (1-self.alpha), texts_embeddings_tensor * self.alpha)
+        concat_embeddings = patch_embeddings + texts_embeddings_tensor
 
         # print(concat_embeddings.shape)
 

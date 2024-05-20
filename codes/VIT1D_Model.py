@@ -111,7 +111,7 @@ class VIT1D_Model(nn.Module):
         n_batch, n_channel, _ = x.shape
 
         cls_tokens = repeat(self.cls_token, 'd -> b d', b=n_batch)
-
+        # print(x.shape)
         x, ps = pack([cls_tokens, x], 'b * d')
         # cls_tokens    -> torch.Size([1, 1024])
         # x             -> torch.Size([1, 16, 1024])

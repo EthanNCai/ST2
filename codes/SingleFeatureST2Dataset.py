@@ -79,7 +79,10 @@ class SingleFeatureSerialDatasetForST2(Dataset):
 
     def __getitem__(self, i):
         data, target = self.stepped_serial_data[i]
-
+        data_target = list(data) + [target]
+        data_target = scaling(data_target)
+        data = data_target[:-1]
+        target = data_target[-1]
         dates = self.stepped_serial_data_date_stamp[i]
 
         # print('get_item >>>',dates)

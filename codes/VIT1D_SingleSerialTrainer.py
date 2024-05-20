@@ -16,10 +16,10 @@ batch_size = 16
 epochs = 100
 time_step = 64
 patch_size = 4
-patch_token_dim = 32
+patch_token_dim = 128
 mlp_dim = 32
 learning_rate = 0.001
-target_mean_len = 1
+target_mean_len = 5
 train_test_ratio = 0.8
 dropout = 0.1
 # teu_dropout = 0.1
@@ -78,18 +78,22 @@ def main():
     test_serial = SerialDataset(spx_test, time_step=time_step,
                                 target_mean_len=target_mean_len,
                                 to_tensor=True)
-    train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=False, num_workers=2,
+    train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=True, num_workers=2,
                               drop_last=True)
     test_loader = DataLoader(test_serial, batch_size=batch_size, shuffle=True, num_workers=2,
                              drop_last=True)
 
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(vit1d.parameters(), lr=learning_rate)
+
+    # print('train_loader[0]',train_loader[0])
+
     for epoch_index in range(epochs):
         vit1d.train()
         for batch_index, (data, target) in enumerate(train_loader):
+            # print(data.shape)
             # data -> (batch, len)
-
+            # print(data.shape)
             data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
 
             # torch.Size([32, 1, 256])
