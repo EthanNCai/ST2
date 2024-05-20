@@ -16,7 +16,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 16
 epochs = 100
-time_step = 64
+time_step = 32
 learning_rate = 0.001
 target_mean_len = 1
 train_test_ratio = 0.8

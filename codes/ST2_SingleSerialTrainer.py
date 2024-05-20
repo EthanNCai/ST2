@@ -6,13 +6,10 @@ import torch
 import torch.nn as nn
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import copy
-import Visualizer
 import pickle
-from TEU import TextExtractionUnit
 from sklearn.metrics import mean_absolute_percentage_error
 import os
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -23,13 +20,13 @@ patch_size = 4
 patch_token_dim = 128
 mlp_dim = 32
 learning_rate = 0.001
-target_mean_len = 5
+target_mean_len = 1
 train_test_ratio = 0.8
 dropout = 0.1
-alpha = 0.3
-teu_dropout = 0.1
+alpha = 0.5
+teu_dropout = 0.15
 text_embeddings_dim = 128
-pooling_mode = "avg"
+pooling_mode = "max"
 stock = 'SPX'
 shuffle_train = True
 
@@ -143,10 +140,10 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            print(
-                f"batch:{i}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
+            # print(
+            #     f"batch:{i}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
 
-        # st2.eval()
+        st2.eval()
         # with torch.no_grad():
         test_MSE_loss = 0
         test_MAPE_loss = 0
@@ -160,7 +157,6 @@ def main():
                 # torch.Size([32])
 
                 batched_news = load_the_news(batch_size, patch_size, corresponding_dates, news_dict)
-
                 output = st2(data, batched_news)
 
                 output = output.squeeze(-1)
@@ -168,11 +164,11 @@ def main():
                 MAPE_loss = mean_absolute_percentage_error(output.cpu(), target.cpu())
                 test_MSE_loss += MSE_loss.item()
                 test_MAPE_loss += MAPE_loss
-                print(f"batch -> ({i}/{len(test_loader)})")
+                # print(f"batch -> ({i}/{len(test_loader)})")
 
         torch.save(st2, f'../checkpoints/st2_mape_{round(test_MAPE_loss / len(test_loader), 3)}_{stock}_.pth')
         print(f"evaluate_set --> MSE_loss:{round(test_MSE_loss / len(test_loader), 3)}, MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}({round((test_MAPE_loss / len(test_loader)) * 100, 2)}%)")
-        print("model_saved")
+        # print("model_saved")
         # train finished
     # Visualizer.visualizer(train, test, 5, time_step, st2, device=device)
 

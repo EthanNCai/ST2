@@ -25,12 +25,10 @@ class TextExtractionUnit(nn.Module):
             out = self.bert.encode(text, convert_to_tensor=True)
         out = self.dropout(out)
         out = self.identity_mlp(out)
-        # out = self.layer_norm(out)
         out = self.gelu(out)
         # ( C, L) -> ( L, C)
         out = out.permute(1, 0)
         out = self.pooling(out)
-        # out = self.gelu(out)
         # (C, L) -> (L)
         out = out.view(1, out.shape[0], )
         return out

@@ -119,7 +119,7 @@ def main():
             print(
                 f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
 
-        # st2.eval()
+        st2.eval()
 
         test_MSE_loss = 0
         test_MAPE_loss = 0

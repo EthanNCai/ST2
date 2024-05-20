@@ -152,11 +152,9 @@ class ST2(nn.Module):
         # PART 4 -> Positional embedding0
         # alpha = 0.05
 
-        concat_embeddings = patch_embeddings + texts_embeddings_tensor
+        concat_embeddings = (1 - self.alpha) * patch_embeddings + self.alpha * texts_embeddings_tensor
 
         # print(concat_embeddings.shape)
-
-
         # pos_embedding                 -> torch.Size([1, 17, 1024])
         # pos_embedding[:, :(n_channel + 1)]    -> torch.Size([1, 17, 1024])
 
