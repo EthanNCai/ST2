@@ -151,9 +151,10 @@ class ST2(nn.Module):
         # PART 4 -> Positional embedding0
         # alpha = 0.05
 
-        concat_embeddings = 0 * patch_embeddings + 0 * texts_embeddings_tensor
+        concat_embeddings =  patch_embeddings +  texts_embeddings_tensor
 
-        concat_embeddings = torch.randn(texts_embeddings_tensor.shape).to('cuda')
+        # concat_embeddings = torch.randn(texts_embeddings_tensor.shape).to('cuda')
+        # cls_token_unified_ = torch.randn(cls_token_unified.shape).to('cuda')
 
         # print(concat_embeddings.shape)
         # pos_embedding                 -> torch.Size([1, 17, 1024])

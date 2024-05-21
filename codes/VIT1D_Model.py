@@ -111,7 +111,9 @@ class VIT1D_Model(nn.Module):
         n_batch, n_channel, _ = x.shape
 
         cls_tokens = repeat(self.cls_token, 'd -> b d', b=n_batch)
-        # print(x.shape)
+        # print(x.shape).to('cuda')
+        # x = torch.randn(x.shape).to('cuda')
+        # cls_tokens = torch.randn(cls_tokens.shape).to('cuda')
         x, ps = pack([cls_tokens, x], 'b * d')
         # cls_tokens    -> torch.Size([1, 1024])
         # x             -> torch.Size([1, 16, 1024])
@@ -121,7 +123,7 @@ class VIT1D_Model(nn.Module):
         x += self.pos_embedding[:, :(n_channel + 1)]
         # pos_embedding                 -> torch.Size([1, 17, 1024])
         # pos_embedding[:, :(n_channel + 1)]    -> torch.Size([1, 17, 1024])
-
+        # x = torch.randn(x.shape).to('cuda')
         x = self.dropout(x)
         x = self.transformer(x)
         # x -> torch.Size([1, 17, 1024])

@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-import Visualizer
+import LSTM_Visualizer
 from sklearn.metrics import mean_absolute_percentage_error
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

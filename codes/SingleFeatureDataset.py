@@ -8,7 +8,7 @@ from sklearn import preprocessing
 
 
 def scaling(raw_data):
-    scaler = preprocessing.MinMaxScaler()
+    scaler = preprocessing.StandardScaler()
     raw_data = copy.deepcopy(raw_data)
     raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
     return raw_data.reshape(-1)
@@ -36,10 +36,9 @@ class SerialDataset(Dataset):
 
     def __getitem__(self, i):
         data, target = self.stepped_serial_data[i]
-        data_target = list(data) + [target]
-        data_target = scaling(data_target)
-        data = data_target[:-1]
-        target = data_target[-1]
+        now = data[-1]
+
+        # label = 1 if target >= now else 0
         if self.to_tensor:
             return torch.tensor(data).double(), torch.tensor(target).double()
         else:

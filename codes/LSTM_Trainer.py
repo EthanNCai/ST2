@@ -8,17 +8,17 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-import Visualizer
+import LSTM_Visualizer
 from sklearn.metrics import mean_absolute_percentage_error
 from LSTM_Model import SimpleLSTM
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 16
-epochs = 100
-time_step = 32
+epochs = 10
+time_step = 64
 learning_rate = 0.001
-target_mean_len = 1
+target_mean_len = 18
 train_test_ratio = 0.8
 
 lstm = SimpleLSTM(input_size=time_step, hidden_size=50, num_layers=8, ).to(device)
@@ -31,14 +31,14 @@ def main():
     # airline_passengers = df['Passengers'].tolist()
     price_df = pd.read_csv('../stock_fetching/SPX-10.csv')
     price = price_df['close'].tolist()
-    price = np.array(list(reversed(price)))
+    price = np.array(list(price))
     # airline_passengers = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.3
 
     # train = airline_passengers[:int(len(airline_passengers) * train_test_ratio)]
     # test = airline_passengers[:int(len(airline_passengers) * train_test_ratio)]
 
     raw_data = price
-    scaler = preprocessing.MinMaxScaler()
+    scaler = preprocessing.StandardScaler()
     raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
     raw_data = raw_data.reshape(-1)
 
@@ -77,9 +77,10 @@ def main():
             output = output.squeeze(-1)
 
             loss = criterion(output, target)
-            optimizer.zero_grad()
+
             loss.backward()
             optimizer.step()
+            optimizer.zero_grad()
             # print(
             #     f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
 
@@ -103,7 +104,7 @@ def main():
 
     # train finished
 
-    # Visualizer.visualizer(train, test, len(test), time_step, lstm, device=device)
+    LSTM_Visualizer.visualizer(train, test, time_step, lstm, device=device)
 
 
 #

@@ -8,18 +8,18 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-import Visualizer
+import LSTM_Visualizer
 from sklearn.metrics import mean_absolute_percentage_error
-
+from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 batch_size = 16
 epochs = 100
-time_step = 64
-patch_size = 4
-patch_token_dim = 128
-mlp_dim = 32
+time_step = 128
+patch_size = 2
+patch_token_dim =16
+mlp_dim = 16
 learning_rate = 0.001
-target_mean_len = 3
+target_mean_len = 30
 train_test_ratio = 0.8
 dropout = 0.1
 # teu_dropout = 0.1
@@ -43,22 +43,28 @@ vit1d = VIT1D_Model(
 
 
 def scaling(raw_data):
-    scaler = preprocessing.MinMaxScaler()
+    scaler = preprocessing.StandardScaler()
     raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
     return raw_data.reshape(-1)
+    # raw_data=raw_data.reshape(-1, 1)
+    # raw_data = TimeSeriesScalerMeanVariance(mu=0.,
+    #                              std=1.).fit_transform(raw_data)
+    # return raw_data.reshape(-1)
+
 
 def read_stock_np(path):
     price_df = pd.read_csv(path)
     price = price_df['close'].tolist()
     return np.array(price)
 
+
 def main():
-    spx_price = read_stock_np('../stock_fetching/SPX-10.csv')
+    spx_price = read_stock_np('../stock_fetching/SPX-20.csv')
     # nasdaq_price = read_stock_np('../stock_fetching/IXIC-10.csv')
     # dji_price = read_stock_np('../stock_fetching/DJI-10.csv')
     # hsi_price = read_stock_np('../stock_fetching/HSI-10.csv')
 
-
+    # spx_raw_data = spx_price
     spx_raw_data = scaling(spx_price)
     # nasdaq_raw_data = scaling(nasdaq_price)
     # dji_raw_data = scaling(dji_price)
@@ -89,47 +95,54 @@ def main():
     # print('train_loader[0]',train_loader[0])
 
     for epoch_index in range(epochs):
-        vit1d.train()
-        for batch_index, (data, target) in enumerate(train_loader):
-            # print(data.shape)
-            # data -> (batch, len)
-            # print(data.shape)
-            data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
 
+        vit1d.train()
+
+        for batch_index, (data, target) in enumerate(train_loader):
+            # data_preview = list(data[5].detach().numpy())
+            # target_preview = target[5].detach().numpy()
+            # # plt.plot(data_preview + [target_preview], c='r')
+            # plt.plot(data_preview, c='g')
+            # plt.savefig('sinc.png')
+            # quit()
+
+            data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
+            # data = torch.randn(data.shape).to('cuda')
             # torch.Size([32, 1, 256])
             target = target.to(device).to(dtype=torch.float32)
             # torch.Size([32])
 
             output = vit1d(data)
-
             output = output.squeeze(-1)
 
             loss = criterion(output, target)
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            # print(
-            #     f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
+            optimizer.zero_grad()
+            print(
+                f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
 
-        # st2.eval()
+        vit1d.eval()
 
-        test_MSE_loss = 0
+        test_loss = 0
         test_MAPE_loss = 0
         for i, (data, target) in enumerate(test_loader):
             with torch.no_grad():
                 data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
                 target = target.to(device).to(dtype=torch.float32)
+                # data = torch.randn(data.shape).to('cuda')
                 output = vit1d(data)
                 output = output.squeeze(-1)
-                MSE_loss = criterion(output, target)
+                loss = criterion(output, target)
                 MAPE_loss = mean_absolute_percentage_error(output.cpu(), target.cpu())
-                test_MSE_loss += MSE_loss.item()
+                test_loss += loss.item()
                 test_MAPE_loss += MAPE_loss
 
         print(
-            f"evaluate_set --> MSE_loss:{round(test_MSE_loss / len(test_loader), 3)}, MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}({round((test_MAPE_loss / len(test_loader)) * 100, 2)}%)")
-    # train finished
-    # Visualizer.visualizer(train, test, 5, time_step, st2, device=device)
+            f"evaluate_set --> loss:{round(test_loss / len(test_loader), 3)},"
+            f" MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}({round((test_MAPE_loss / len(test_loader)) * 100, 2)}%)")
+
+    Visualizer.visualizer(spx_train, spx_test,  time_step, vit1d, device=device)
 
 
 if __name__ == '__main__':

@@ -10,15 +10,17 @@ import pickle
 from sklearn.metrics import mean_absolute_percentage_error
 import os
 
+from tslearn.preprocessing import TimeSeriesScalerMeanVariance
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 16
 epochs = 100
-time_step = 10
+time_step = 32
 patch_size = 2
-token_dim = 32
-mlp_dim = 32
+token_dim = 128
+mlp_dim = 256
 learning_rate = 0.001
 target_mean_len = 1
 train_test_ratio = 0.8
@@ -56,9 +58,8 @@ st2 = ST2(
 
 
 def scaling(raw_data):
-    scaler = preprocessing.MinMaxScaler()
-    raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
-    return raw_data.reshape(-1)
+    return TimeSeriesScalerMeanVariance(mu=0.,
+                                 std=1.).fit_transform(raw_data)
 
 
 def main():
@@ -91,7 +92,7 @@ def main():
     with open('../datas/news_dict.pickle', 'rb') as f:
         news_dict = pickle.load(f)
 
-    raw_data = scaling(price)
+    raw_data = price
 
     print('raw amount >>>', len(raw_data))
     print('train amount >>>', int(len(raw_data) * train_test_ratio))
