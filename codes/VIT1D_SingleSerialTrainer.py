@@ -8,19 +8,19 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-import LSTM_Visualizer
+from VIT1D_Visualizer import visualizer
 from sklearn.metrics import mean_absolute_percentage_error
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-batch_size = 16
-epochs = 100
-time_step = 128
+batch_size = 32
+epochs = 30
+time_step = 64
 patch_size = 2
-patch_token_dim =16
-mlp_dim = 16
-learning_rate = 0.001
-target_mean_len = 30
-train_test_ratio = 0.8
+patch_token_dim = 512
+mlp_dim = 128
+learning_rate = 0.0001
+target_mean_len = 20
+train_test_ratio = 0.88
 dropout = 0.1
 # teu_dropout = 0.1
 
@@ -34,8 +34,8 @@ vit1d = VIT1D_Model(
     num_classes=1,
     channels=1,
     dim=patch_token_dim,
-    depth=8,
-    heads=8,
+    depth=32,
+    heads=4,
     mlp_dim=mlp_dim,
     dropout=dropout,
     emb_dropout=dropout
@@ -60,12 +60,17 @@ def read_stock_np(path):
 
 def main():
     spx_price = read_stock_np('../stock_fetching/SPX-20.csv')
+    # spx_price = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.1
     # nasdaq_price = read_stock_np('../stock_fetching/IXIC-10.csv')
     # dji_price = read_stock_np('../stock_fetching/DJI-10.csv')
     # hsi_price = read_stock_np('../stock_fetching/HSI-10.csv')
 
     # spx_raw_data = spx_price
+    spx_price = np.sin(np.arange(4000)) + np.random.randn(4000) * 0.05
+    spx_price = spx_price * np.linspace(0, 100, 4000) + np.linspace(0, 400, 4000)
+
     spx_raw_data = scaling(spx_price)
+    #spx_raw_data = np.diff(spx_raw_data)
     # nasdaq_raw_data = scaling(nasdaq_price)
     # dji_raw_data = scaling(dji_price)
     # hsi_raw_data = scaling(hsi_price)
@@ -99,15 +104,8 @@ def main():
         vit1d.train()
 
         for batch_index, (data, target) in enumerate(train_loader):
-            # data_preview = list(data[5].detach().numpy())
-            # target_preview = target[5].detach().numpy()
-            # # plt.plot(data_preview + [target_preview], c='r')
-            # plt.plot(data_preview, c='g')
-            # plt.savefig('sinc.png')
-            # quit()
 
             data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
-            # data = torch.randn(data.shape).to('cuda')
             # torch.Size([32, 1, 256])
             target = target.to(device).to(dtype=torch.float32)
             # torch.Size([32])
@@ -116,9 +114,10 @@ def main():
             output = output.squeeze(-1)
 
             loss = criterion(output, target)
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            optimizer.zero_grad()
+
             print(
                 f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
 
@@ -132,17 +131,17 @@ def main():
                 target = target.to(device).to(dtype=torch.float32)
                 # data = torch.randn(data.shape).to('cuda')
                 output = vit1d(data)
-                output = output.squeeze(-1)
+                # output = output.squeeze(-1)
                 loss = criterion(output, target)
-                MAPE_loss = mean_absolute_percentage_error(output.cpu(), target.cpu())
+                # MAPE_loss = mean_absolute_percentage_error(output.detach().cpu(), target.detach().cpu())
                 test_loss += loss.item()
-                test_MAPE_loss += MAPE_loss
+                # test_MAPE_loss += MAPE_loss
 
         print(
             f"evaluate_set --> loss:{round(test_loss / len(test_loader), 3)},"
             f" MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}({round((test_MAPE_loss / len(test_loader)) * 100, 2)}%)")
 
-    Visualizer.visualizer(spx_train, spx_test,  time_step, vit1d, device=device)
+        visualizer(spx_train, spx_test,  time_step, vit1d, device=device)
 
 
 if __name__ == '__main__':

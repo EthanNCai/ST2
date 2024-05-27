@@ -15,10 +15,10 @@ from LSTM_Model import SimpleLSTM
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 16
-epochs = 10
+epochs = 30
 time_step = 64
 learning_rate = 0.001
-target_mean_len = 18
+target_mean_len = 16
 train_test_ratio = 0.8
 
 lstm = SimpleLSTM(input_size=time_step, hidden_size=50, num_layers=8, ).to(device)
@@ -29,16 +29,19 @@ def main():
     # sin_test = np.sin(np.arange(500) * 0.02) + np.random.randn(500) * 0.02
     # df = pd.read_csv('../datas/airline_passengers.csv')
     # airline_passengers = df['Passengers'].tolist()
-    price_df = pd.read_csv('../stock_fetching/SPX-10.csv')
-    price = price_df['close'].tolist()
-    price = np.array(list(price))
+    #price_df = pd.read_csv('../stock_fetching/HSI-10.csv')
+    #price = price_df['close'].tolist()
+    #price = np.array(list(price))
+    spx_price = np.sin(np.arange(4000)) + np.random.randn(4000) * 0.05
+    price = spx_price * np.linspace(0, 100, 4000) + np.linspace(0, 400, 4000)
+
     # airline_passengers = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.3
 
     # train = airline_passengers[:int(len(airline_passengers) * train_test_ratio)]
     # test = airline_passengers[:int(len(airline_passengers) * train_test_ratio)]
 
     raw_data = price
-    scaler = preprocessing.StandardScaler()
+    scaler = preprocessing.MinMaxScaler()
     raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
     raw_data = raw_data.reshape(-1)
 
@@ -102,9 +105,7 @@ def main():
 
         print(f"test --> MSE_loss:{round(test_MSE_loss / len(test_loader), 3)},MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}({round((test_MAPE_loss / len(test_loader))*100,2)}%)")
 
-    # train finished
-
-    LSTM_Visualizer.visualizer(train, test, time_step, lstm, device=device)
+        LSTM_Visualizer.visualizer(train, test, time_step, lstm, device=device)
 
 
 #

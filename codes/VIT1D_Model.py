@@ -89,8 +89,6 @@ class VIT1D_Model(nn.Module):
             Rearrange('b c (n p) -> b n (p c)', p=patch_size),
             nn.LayerNorm(patch_dim),
             nn.Linear(patch_dim, dim),
-            # identity layer
-            nn.Linear(dim, dim),
             nn.LayerNorm(dim),
         )
 
@@ -101,8 +99,11 @@ class VIT1D_Model(nn.Module):
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
 
         self.mlp_head = nn.Sequential(
+            # nn.GELU(),
             nn.LayerNorm(dim),
-            nn.Linear(dim, num_classes)
+
+            nn.Linear(dim, num_classes * 10),
+            nn.Linear(num_classes * 10, num_classes)
         )
 
     def forward(self, time_series):
@@ -111,9 +112,7 @@ class VIT1D_Model(nn.Module):
         n_batch, n_channel, _ = x.shape
 
         cls_tokens = repeat(self.cls_token, 'd -> b d', b=n_batch)
-        # print(x.shape).to('cuda')
-        # x = torch.randn(x.shape).to('cuda')
-        # cls_tokens = torch.randn(cls_tokens.shape).to('cuda')
+
         x, ps = pack([cls_tokens, x], 'b * d')
         # cls_tokens    -> torch.Size([1, 1024])
         # x             -> torch.Size([1, 16, 1024])
@@ -123,7 +122,7 @@ class VIT1D_Model(nn.Module):
         x += self.pos_embedding[:, :(n_channel + 1)]
         # pos_embedding                 -> torch.Size([1, 17, 1024])
         # pos_embedding[:, :(n_channel + 1)]    -> torch.Size([1, 17, 1024])
-        # x = torch.randn(x.shape).to('cuda')
+
         x = self.dropout(x)
         x = self.transformer(x)
         # x -> torch.Size([1, 17, 1024])
