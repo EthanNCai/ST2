@@ -5,10 +5,7 @@ import pandas as pd
 from sklearn import preprocessing
 
 
-def scaling(raw_data):
-    scaler = preprocessing.MinMaxScaler()
-    raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
-    return raw_data.reshape(-1)
+
 
 
 class MultiFeatureDataset(Dataset):
@@ -55,7 +52,7 @@ def main():
     price_df = pd.read_csv('../stock_fetching/SPX-10.csv')
 
     features_ = [np.array(price_df[feature]) for feature in features]
-    features = [scaling(feature) for feature in features_]
+
 
     # print(features[0])
     # price = np.array(price)

@@ -36,7 +36,7 @@ class SerialDataset(Dataset):
 
     def __getitem__(self, i):
         data, target = self.stepped_serial_data[i]
-        now = data[-1]
+        #data += target
 
         # label = 1 if target >= now else 0
         if self.to_tensor:
