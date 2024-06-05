@@ -16,10 +16,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 16
 
-epochs = 10000
-time_step = 64
+epochs = 20
+time_step = 16
 learning_rate = 0.001
-target_mean_len = 4
+target_mean_len = 1
 
 train_test_ratio = 0.8
 
@@ -31,11 +31,12 @@ def main():
     # sin_test = np.sin(np.arange(500) * 0.02) + np.random.randn(500) * 0.02
     # df = pd.read_csv('../datas/airline_passengers.csv')
     # airline_passengers = df['Passengers'].tolist()
-    #price_df = pd.read_csv('../stock_fetching/HSI-10.csv')
-    #price = price_df['close'].tolist()
-    #price = np.array(list(price))
-    spx_price = np.sin(np.arange(4000)) + np.random.randn(4000) * 0.05
-    price = spx_price * np.linspace(0, 100, 4000) + np.linspace(0, 400, 4000)
+    price_df = pd.read_csv('../stock_fetching/SPX-10.csv')
+    price = price_df['vol'].tolist()
+    price = np.array(list(price))
+    price = np.diff(price)
+    # spx_price = np.sin(np.arange(4000)) + np.random.randn(4000) * 0.05
+    # price = spx_price * np.linspace(0, 100, 4000) + np.linspace(0, 400, 4000)
 
     # airline_passengers = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.3
 
@@ -43,7 +44,7 @@ def main():
     # test = airline_passengers[:int(len(airline_passengers) * train_test_ratio)]
 
     raw_data = price
-    scaler = preprocessing.MinMaxScaler()
+    scaler = preprocessing.StandardScaler()
     raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
     raw_data = raw_data.reshape(-1)
 
@@ -87,13 +88,10 @@ def main():
             optimizer.step()
             optimizer.zero_grad()
             # print(
-            #     f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
-
+            # f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
         lstm.eval()
-
         test_MSE_loss = 0
         test_MAPE_loss = 0
-
         for i, (data, target) in enumerate(test_loader):
             with torch.no_grad():
                 data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
@@ -104,10 +102,8 @@ def main():
                 MAPE_loss = mean_absolute_percentage_error(output.cpu(), target.cpu())
                 test_MSE_loss += MSE_loss.item()
                 test_MAPE_loss += MAPE_loss
-
         print(f"test --> MSE_loss:{round(test_MSE_loss / len(test_loader), 3)},MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}({round((test_MAPE_loss / len(test_loader))*100,2)}%)")
-
-        LSTM_Visualizer.visualizer(train, test, time_step, lstm, device=device)
+    LSTM_Visualizer.visualizer(train, test, time_step, lstm, device=device)
 
 
 #

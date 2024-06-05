@@ -12,14 +12,14 @@ from VIT1D_Visualizer import visualizer
 from sklearn.metrics import mean_absolute_percentage_error
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-batch_size = 32
-epochs = 30
-time_step = 64
-patch_size = 2
-patch_token_dim = 512
-mlp_dim = 128
+batch_size = 16
+epochs = 10
+time_step = 32
+patch_size = 4
+patch_token_dim = 32
+mlp_dim = 32
 learning_rate = 0.0001
-target_mean_len = 20
+target_mean_len = 1
 train_test_ratio = 0.88
 dropout = 0.1
 # teu_dropout = 0.1
@@ -54,23 +54,23 @@ def scaling(raw_data):
 
 def read_stock_np(path):
     price_df = pd.read_csv(path)
-    price = price_df['close'].tolist()
+    price = price_df['vol'].tolist()
     return np.array(price)
 
 
 def main():
-    spx_price = read_stock_np('../stock_fetching/SPX-20.csv')
+    spx_price = read_stock_np('../stock_fetching/SPX-10.csv')
     # spx_price = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.1
     # nasdaq_price = read_stock_np('../stock_fetching/IXIC-10.csv')
     # dji_price = read_stock_np('../stock_fetching/DJI-10.csv')
     # hsi_price = read_stock_np('../stock_fetching/HSI-10.csv')
 
     # spx_raw_data = spx_price
-    spx_price = np.sin(np.arange(4000)) + np.random.randn(4000) * 0.05
-    spx_price = spx_price * np.linspace(0, 100, 4000) + np.linspace(0, 400, 4000)
+    #spx_price = np.sin(np.arange(4000)) + np.random.randn(4000) * 0.05
+    #spx_price = spx_price * np.linspace(0, 100, 4000) + np.linspace(0, 400, 4000)
 
     spx_raw_data = scaling(spx_price)
-    #spx_raw_data = np.diff(spx_raw_data)
+    spx_raw_data = np.diff(spx_raw_data)
     # nasdaq_raw_data = scaling(nasdaq_price)
     # dji_raw_data = scaling(dji_price)
     # hsi_raw_data = scaling(hsi_price)
@@ -133,7 +133,7 @@ def main():
                 output = vit1d(data)
                 # output = output.squeeze(-1)
                 loss = criterion(output, target)
-                # MAPE_loss = mean_absolute_percentage_error(output.detach().cpu(), target.detach().cpu())
+                MAPE_loss = mean_absolute_percentage_error(output.detach().cpu(), target.detach().cpu())
                 test_loss += loss.item()
                 # test_MAPE_loss += MAPE_loss
 
@@ -141,7 +141,7 @@ def main():
             f"evaluate_set --> loss:{round(test_loss / len(test_loader), 3)},"
             f" MAPE_loss:{round(test_MAPE_loss / len(test_loader), 3)}({round((test_MAPE_loss / len(test_loader)) * 100, 2)}%)")
 
-        visualizer(spx_train, spx_test,  time_step, vit1d, device=device)
+    visualizer(spx_train, spx_test,  time_step, vit1d, device=device)
 
 
 if __name__ == '__main__':
