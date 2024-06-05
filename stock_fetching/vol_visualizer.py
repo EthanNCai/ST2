@@ -4,6 +4,7 @@ import numpy as np
 from sklearn import preprocessing
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
 NAME = './SPX-10.csv'
 
 sliding_var = 30
@@ -11,12 +12,16 @@ df = pd.read_csv(NAME)
 vol = df['vol']
 close = df['close']
 
+
 def scaling(raw_data):
     scaler = preprocessing.StandardScaler()
     raw_data = scaler.fit_transform(np.array(raw_data).reshape(-1, 1))
     return raw_data.reshape(-1)
 
-def find_anomalies(random_data,steps):
+def judge_anomalies(datapoint_):
+    pass
+
+def find_anomalies(random_data, steps):
     anomaly_datas = []
     anomaly_steps = []
     # Set upper and lower limit to 3 standard deviation
@@ -34,7 +39,8 @@ def find_anomalies(random_data,steps):
             anomaly_datas.append(data)
         else:
             ...
-    return anomaly_datas,anomaly_steps
+    return anomaly_datas, anomaly_steps
+
 
 anomaly_datas = []
 anomaly_steps = []
@@ -49,28 +55,27 @@ vol_steps = np.arange(0, len(vol), 1)
 # ax[1].plot(close)
 
 for i in range(sliding_var, len(vol_steps)):
-   # np.var(vol[i-sliding_var:i])
-   anomaly_datas_, anomaly_steps_ = find_anomalies(vol[i-sliding_var:i], vol_steps[i-sliding_var:i])
-   anomaly_datas.extend(anomaly_datas_)
-   anomaly_steps.extend(anomaly_steps_)
+    # np.var(vol[i-sliding_var:i])
+
+    anomaly_datas_, anomaly_steps_ = find_anomalies(vol[i - sliding_var:i], vol_steps[i - sliding_var:i])
+    anomaly_datas.extend(anomaly_datas_)
+    anomaly_steps.extend(anomaly_steps_)
 
 anomaly_prices = np.array([close[i] for i in anomaly_steps])
 
-
-
-fig, axes = plt.subplots(figsize=(6,4))
+fig, axes = plt.subplots(figsize=(6, 4))
 # ax.plot(vol_steps, close, c='r')
-axes.scatter(anomaly_steps,anomaly_prices,c='green',zorder=99,marker = 'x', s=15)
-axes.plot(vol_steps, close,c='r',linewidth='1.5')
+axes.scatter(anomaly_steps, anomaly_prices, c='green', zorder=99, marker='x', s=15)
+axes.plot(vol_steps, close, c='r', linewidth='1.5')
 
 axins = inset_axes(axes, width="50%", height="38%", loc='upper left',
                    borderpad=0,
                    bbox_to_anchor=(0, 0, 1, 1),
                    bbox_transform=axes.transAxes)
 # axes.grid()
-axins.scatter(anomaly_steps,anomaly_prices,c='green',marker = 'x',zorder=99, s=15)
-axins.plot(vol_steps, close,c='r',linewidth='1.5')
-mark_inset(axes, axins, loc1=1, loc2=3, fc="none", ec='black', lw=1,zorder=199)
+axins.scatter(anomaly_steps, anomaly_prices, c='green', marker='x', zorder=99, s=15)
+axins.plot(vol_steps, close, c='r', linewidth='1.5')
+mark_inset(axes, axins, loc1=1, loc2=3, fc="none", ec='black', lw=1, zorder=199)
 
 axins.set_xlim(2050, 2400)
 axins.set_ylim(0.5, 1.7)
