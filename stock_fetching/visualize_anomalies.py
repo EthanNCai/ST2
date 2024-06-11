@@ -5,6 +5,7 @@ from sklearn import preprocessing
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import copy
+from find_outliers import find_outliers
 
 NAME = './HSI-10.csv'
 
@@ -23,38 +24,12 @@ def scaling(raw_data):
     return raw_data.reshape(-1)
 
 
-def calculate_outlier_boundary(data_in):
-    data_in = np.array(data_in)
-    data_std = np.std(data_in)
-    data_mean = np.mean(data_in)
-    anomaly_cut_off = data_std * 3
-
-    lower_limit = data_mean - anomaly_cut_off
-    upper_limit = data_mean + anomaly_cut_off
-
-    return lower_limit, upper_limit
-
 vol = scaling(vol.to_list())
 vol = list(vol)
 close = scaling(close.to_list())
 close = list(close)
 
-outliers_list = []
-outliers_flag_list = []
-outliers_index_list = []
-
-outliers_flag_list.extend([0] * sliding_var)
-
-
-for i in range(sliding_var, len(vol)):
-    data = vol[i]
-    lower_limit, upper_limit = calculate_outlier_boundary(vol[i - sliding_var:i])
-    if upper_limit < data or lower_limit > data:
-        outliers_flag_list.append(1)
-        outliers_index_list.append(i)
-        outliers_list.append(data)
-    else:
-        outliers_flag_list.append(0)
+outliers_list, outliers_flag_list, outliers_index_list = find_outliers(vol, sliding_var)
 
 assert len(vol) == len(outliers_flag_list)
 assert len(outliers_index_list) == len(outliers_list)
