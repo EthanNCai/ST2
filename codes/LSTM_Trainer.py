@@ -17,8 +17,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 batch_size = 16
 
 epochs = 20
-time_step = 16
-learning_rate = 0.001
+time_step = 64
+learning_rate = 0.0001
 target_mean_len = 1
 
 train_test_ratio = 0.7
@@ -77,21 +77,14 @@ def main():
         lstm.train()
         for batch_index, (data, target) in enumerate(train_loader):
             # data -> (batch, len)
-
             data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
-
-            # torch.Size([32, 1, 256])
             target = target.to(device).to(dtype=torch.float32)
-            # torch.Size([32])
-
             output = lstm(data)
-            target = target.unsqueeze(1)
-
+            output = output.squeeze(1)
             loss = criterion(output, target)
-
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            optimizer.zero_grad()
             print(
             f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, BCE_loss:{round(loss.item(), 3)}")
         lstm.eval()
@@ -108,7 +101,6 @@ def main():
                 loss_ = criterion(output, target)
                 test_BCE_loss += loss_.item()
 
-                # 将预测和真实标签转换为二进制形式
                 predicted = torch.round(output).cpu().numpy()
                 true = target.cpu().numpy()
                 predicted_labels.extend(predicted)
@@ -131,7 +123,6 @@ def main():
 
         print(f"Test Loss: {test_loss:.4f}, F1 Score: {f1:.4f}")
         print(f"Precision: {precision:.4f}, Recall: {recall:.4f}, Accuracy: {accuracy:.4f}")
-    # LSTM_Visualizer.visualizer(train, test, time_step, lstm, device=device)
 
 
 #
