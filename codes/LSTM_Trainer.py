@@ -17,13 +17,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 batch_size = 16
 
 epochs = 20
-time_step = 64
+time_step = 12
 learning_rate = 0.0001
-target_mean_len = 1
+# target_mean_len = 1
 
-train_test_ratio = 0.7
+train_test_ratio = 0.8
 
-lstm = SimpleLSTM(input_size=time_step, hidden_size=50, num_layers=8, ).to(device)
+lstm = SimpleLSTM(input_size=1, hidden_size=50, num_layers=8).to(device)
 
 
 def scaling(raw_data):
@@ -42,25 +42,22 @@ def main():
     # df = pd.read_csv('../datas/airline_passengers.csv')
     # airline_passengers = df['Passengers'].tolist()
     price_df = pd.read_csv('../stock_fetching/HSI-10-VOF.csv')
-    price = np.array(price_df['vol'].tolist())
+    vol = np.array(price_df['vol'].tolist())
     flag = np.array(price_df['is_vol_outliers'].tolist())
-    # spx_price = np.sin(np.arange(4000)) + np.random.randn(4000) * 0.05
-    # price = spx_price * np.linspace(0, 100, 4000) + np.linspace(0, 400, 4000)
-
     # airline_passengers = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.3
 
     # train = airline_passengers[:int(len(airline_passengers) * train_test_ratio)]
     # test = airline_passengers[:int(len(airline_passengers) * train_test_ratio)]
 
-    scaled_price = scaling(price)
+    scaled_vol = scaling(vol)
 
-    print('raw amount >>>', len(scaled_price))
-    print('train amount >>>', int(len(scaled_price) * train_test_ratio))
+    print('raw amount >>>', len(scaled_vol))
+    print('train amount >>>', int(len(scaled_vol) * train_test_ratio))
     # print(len(scaled_price))
-    test = scaled_price[int(len(scaled_price) * train_test_ratio):]
-    flag_test = flag[int(len(scaled_price) * train_test_ratio):]
-    train = scaled_price[:int(len(scaled_price) * train_test_ratio)]
-    flag_train = flag[:int(len(scaled_price) * train_test_ratio)]
+    test = scaled_vol[int(len(scaled_vol) * train_test_ratio):]
+    flag_test = flag[int(len(flag) * train_test_ratio):]
+    train = scaled_vol[:int(len(scaled_vol) * train_test_ratio)]
+    flag_train = flag[:int(len(flag) * train_test_ratio)]
 
     train_serial = SerialDataset(train, time_step=time_step,
                                  to_tensor=True, flag=flag_train)
@@ -77,52 +74,53 @@ def main():
         lstm.train()
         for batch_index, (data, target) in enumerate(train_loader):
             # data -> (batch, len)
-            data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
+            data = data.to(device).to(dtype=torch.float32)
+            data = data.unsqueeze(2)
             target = target.to(device).to(dtype=torch.float32)
             output = lstm(data)
-            output = output.squeeze(1)
+            target = target.unsqueeze(1)
             loss = criterion(output, target)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             print(
             f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, BCE_loss:{round(loss.item(), 3)}")
-        lstm.eval()
-        test_BCE_loss = 0
-        true_labels = []
-        predicted_labels = []
+        # lstm.eval()
+        # test_BCE_loss = 0
+        # true_labels = []
+        # predicted_labels = []
 
-        for i, (data, target) in enumerate(test_loader):
-            with torch.no_grad():
-                data = data.unsqueeze(1).to(device).to(dtype=torch.float32)
-                target = target.to(device).to(dtype=torch.float32)
-                output = lstm(data)
-                output = output.squeeze(-1)
-                loss_ = criterion(output, target)
-                test_BCE_loss += loss_.item()
-
-                predicted = torch.round(output).cpu().numpy()
-                true = target.cpu().numpy()
-                predicted_labels.extend(predicted)
-                true_labels.extend(true)
-
-        test_loss = test_BCE_loss / len(test_loader)
-        f1 = f1_score(true_labels, predicted_labels)
-
-        # 计算precision
-        true_positive = np.sum(np.logical_and(true_labels, predicted_labels))
-        false_positive = np.sum(np.logical_and(np.logical_not(true_labels), predicted_labels))
-        precision = true_positive / (true_positive + false_positive)
-
-        # 计算recall
-        false_negative = np.sum(np.logical_and(true_labels, np.logical_not(predicted_labels)))
-        recall = true_positive / (true_positive + false_negative)
-
-        # 计算accuracy
-        accuracy = np.sum(true_labels == predicted_labels) / len(true_labels)
-
-        print(f"Test Loss: {test_loss:.4f}, F1 Score: {f1:.4f}")
-        print(f"Precision: {precision:.4f}, Recall: {recall:.4f}, Accuracy: {accuracy:.4f}")
+        # for i, (data, target) in enumerate(test_loader):
+        #     with torch.no_grad():
+        #         data = data.unsqueeze(2).to(device).to(dtype=torch.float32)
+        #         target = target.to(device).to(dtype=torch.float32)
+        #         output = lstm(data)
+        #         output = output.squeeze(-1)
+        #         loss_ = criterion(output, target)
+        #         test_BCE_loss += loss_.item()
+        #
+        #         predicted = torch.round(output).cpu().numpy()
+        #         true = target.cpu().numpy()
+        #         predicted_labels.extend(predicted)
+        #         true_labels.extend(true)
+        #
+        # test_loss = test_BCE_loss / len(test_loader)
+        # f1 = f1_score(true_labels, predicted_labels)
+        #
+        # # 计算precision
+        # true_positive = np.sum(np.logical_and(true_labels, predicted_labels))
+        # false_positive = np.sum(np.logical_and(np.logical_not(true_labels), predicted_labels))
+        # precision = true_positive / (true_positive + false_positive)
+        #
+        # # 计算recall
+        # false_negative = np.sum(np.logical_and(true_labels, np.logical_not(predicted_labels)))
+        # recall = true_positive / (true_positive + false_negative)
+        #
+        # # 计算accuracy
+        # accuracy = np.sum(true_labels == predicted_labels) / len(true_labels)
+        #
+        # print(f"Test Loss: {test_loss:.4f}, F1 Score: {f1:.4f}")
+        # print(f"Precision: {precision:.4f}, Recall: {recall:.4f}, Accuracy: {accuracy:.4f}")
 
 
 #

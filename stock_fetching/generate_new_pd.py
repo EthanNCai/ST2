@@ -3,15 +3,15 @@ import pandas as pd
 from sklearn import preprocessing
 import numpy as np
 
-
-NAME = 'HSI-10'
-
+#
+# NAME = 'HSI-10'
+NAME = 'AIR'
 sliding_var = 10
 df = pd.read_csv(NAME + '.csv')
 vol = df['vol']
-close = df['close']
+# close = df['close']
 
-print('raw count ->', len(close.to_list()))
+# print('raw count ->', len(close.to_list()))
 
 
 def scaling(raw_data):
@@ -23,8 +23,8 @@ def scaling(raw_data):
 
 vol = scaling(vol.to_list())
 vol = list(vol)
-close = scaling(close.to_list())
-close = list(close)
+# close = scaling(close.to_list())
+# close = list(close)
 
 outliers_list, outliers_flag_list, outliers_index_list = find_outliers(vol, sliding_var)
 

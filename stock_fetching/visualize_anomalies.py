@@ -8,11 +8,11 @@ import copy
 from find_outliers import find_outliers
 
 NAME = './HSI-10.csv'
-
+# NAME = './AIR.csv'
 sliding_var = 10
 df = pd.read_csv(NAME)
 vol = df['vol']
-close = df['close']
+# close = df['close']
 
 print('raw count ->', len(close.to_list()))
 

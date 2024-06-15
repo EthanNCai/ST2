@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-NAME = './HSI-10'
+NAME = './AIR'
 df = pd.read_csv(f"{NAME}-VOF.csv")
 
 vol = df['vol']
