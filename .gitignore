@@ -13,6 +13,8 @@ weiboSpider/tests/*
 weiboSpider/weibo.db
 *.log
 
+moka-ai/*
+
 .idea
 
 /checkpoints

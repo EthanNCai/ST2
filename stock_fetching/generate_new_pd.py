@@ -5,7 +5,7 @@ import numpy as np
 
 #
 # NAME = 'HSI-10'
-NAME = 'AIR'
+NAME = 'IXIC-10'
 sliding_var = 10
 df = pd.read_csv(NAME + '.csv')
 vol = df['vol']

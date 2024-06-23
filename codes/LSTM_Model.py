@@ -3,35 +3,30 @@ import torch
 
 
 class SimpleLSTM(nn.Module):
-    def __init__(self, input_size=1, hidden_size=50, num_layers=8, batch_first=True):
+    def __init__(self, input_size=18, hidden_size=50, num_layers=8):
         super().__init__()
-        self.num_layers = num_layers
-        self.hidden_size = hidden_size
-        self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=batch_first)
-        self.linear = nn.Linear(50, 1)
-        self.sigmoid = nn.Sigmoid()
+        self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+        self.linear1 = nn.Linear(50, 25)
+        self.gelu = nn.GELU()
+        self.linear2 = nn.Linear(25, 1)
 
     def forward(self, x):
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        x, _ = self.lstm(x, (h0, c0))
+        x, _ = self.lstm(x)
         x = x[:, -1, :]
-        x = self.linear(x)
-        x = self.sigmoid(x)
+        x = self.linear1(x)
+        x = self.gelu(x)
+        x = self.linear2(x)
         return x
 
 
-# def test():
-#     # (batch_size, sequence_len, feature_size)
-#     data = torch.rand((3, 18, 1))
-#     model = SimpleLSTM()
-#     print(data.shape)
-#     output = model(data)
-#     print(output.shape)
-#
-#     # data = torch.rand((3, 17, 1))
-#     # output = model(data)
-#     # print(output.shape)
-#
+def test():
+    data = torch.rand((32, 9, 18))
+    model = SimpleLSTM()
+    print(data.shape)
+    output = model(data)
+    output = output.squeeze(-1)
+    print(output.shape)
+
+
 
 # test()

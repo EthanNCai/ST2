@@ -1,16 +1,11 @@
 import numpy as np
-import torch
 from torch.utils.data import DataLoader, Dataset
 import pandas as pd
 from sklearn import preprocessing
 from datetime import datetime
 import pickle
-import collections
-import contextlib
-import re
-from ST2_Model import ST2
 import torch
-from TEU import TextExtractionUnit
+from codes.db_making.TEU import TextExtractionUnit
 
 def load_the_news(batch_size,patch_size, corresponding_dates, news_dict):
 

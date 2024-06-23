@@ -14,10 +14,10 @@ def find_outliers(samples_in: list, sliding_window_len: int):
         data_in = np.array(data_in)
         data_std = np.std(data_in)
         data_mean = np.mean(data_in)
-        anomaly_cut_off = data_std * 3
+        anomaly_cut_off = data_std
 
-        lower_limit_ = data_mean - anomaly_cut_off
-        upper_limit_ = data_mean + anomaly_cut_off
+        lower_limit_ = data_mean - anomaly_cut_off * 3
+        upper_limit_ = data_mean + anomaly_cut_off * 3
 
         return lower_limit_, upper_limit_
 

@@ -14,13 +14,13 @@ from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 batch_size = 16
 epochs = 10
-time_step = 32
-patch_size = 4
-patch_token_dim = 32
-mlp_dim = 32
-learning_rate = 0.0001
+time_step = 16
+patch_size = 2
+patch_token_dim = 2
+mlp_dim = 8
+learning_rate = 0.001
 target_mean_len = 1
-train_test_ratio = 0.88
+train_test_ratio = 0.8
 dropout = 0.1
 # teu_dropout = 0.1
 
@@ -59,7 +59,7 @@ def read_stock_np(path):
 
 
 def main():
-    spx_price = read_stock_np('../stock_fetching/SPX-10.csv')
+    spx_price = read_stock_np('../stock_fetching/HSI-10.csv')
     # spx_price = np.sin(np.arange(10000) * 0.1) + np.random.randn(10000) * 0.1
     # nasdaq_price = read_stock_np('../stock_fetching/IXIC-10.csv')
     # dji_price = read_stock_np('../stock_fetching/DJI-10.csv')
@@ -114,9 +114,10 @@ def main():
             output = output.squeeze(-1)
 
             loss = criterion(output, target)
-            optimizer.zero_grad()
             loss.backward()
+
             optimizer.step()
+            optimizer.zero_grad()
 
             print(
                 f"batch:{batch_index}/{len(train_loader)}, epoch:{epoch_index}/{epochs}, loss:{round(loss.item(), 3)}")
@@ -131,11 +132,11 @@ def main():
                 target = target.to(device).to(dtype=torch.float32)
                 # data = torch.randn(data.shape).to('cuda')
                 output = vit1d(data)
-                # output = output.squeeze(-1)
+                output = output.squeeze(-1)
                 loss = criterion(output, target)
                 MAPE_loss = mean_absolute_percentage_error(output.detach().cpu(), target.detach().cpu())
                 test_loss += loss.item()
-                # test_MAPE_loss += MAPE_loss
+                test_MAPE_loss += MAPE_loss
 
         print(
             f"evaluate_set --> loss:{round(test_loss / len(test_loader), 3)},"

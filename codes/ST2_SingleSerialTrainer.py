@@ -17,7 +17,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 16
 epochs = 100
-time_step = 32
+time_step = 64
 patch_size = 2
 token_dim = 128
 mlp_dim = 256

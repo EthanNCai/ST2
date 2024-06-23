@@ -3,7 +3,7 @@ from torch import nn
 
 from einops import rearrange, repeat, pack, unpack
 from einops.layers.torch import Rearrange
-from TEU import TextExtractionUnit
+from codes.db_making.TEU import TextExtractionUnit
 
 
 # classes
