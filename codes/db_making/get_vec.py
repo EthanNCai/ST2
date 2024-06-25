@@ -60,7 +60,9 @@ def load_pickle_dict(news_dict_pickle_path):
 
 # ----------------------------------------
 
-def get_vec(start_date, vol_dict: dict, news_dict: dict, n_continuous_days: int, device_):
+
+
+def get_vec(start_date, vol_dict: dict, news_dict: dict, n_continuous_days: int, teu_,device_):
     news_dict = copy.deepcopy(news_dict)
     is_continuous, date_list, end_day, peek_day = get_continuous_days(news_dict
                                                                       , start_date
@@ -68,7 +70,7 @@ def get_vec(start_date, vol_dict: dict, news_dict: dict, n_continuous_days: int,
     if not is_continuous or peek_day not in vol_dict or end_day not in vol_dict:
         return None, None
     news_list_ordered_by_date = [news_dict[date] for date in date_list]
-    day_wise_embeddings = torch.concat(list(map(teu, news_list_ordered_by_date)), dim=0)
+    day_wise_embeddings = torch.concat(list(map(teu_, news_list_ordered_by_date)), dim=0)
     tensor_weights = generate_weight(n_continuous_days, return_tensor=True, device=device_)
     weighted_pooled_embeddings = weighted_pooling(weights_list=tensor_weights, target_tensor=day_wise_embeddings)
     change_percentage = get_peek_change_percentage(vol_dict, end_day, peek_day)
@@ -76,24 +78,30 @@ def get_vec(start_date, vol_dict: dict, news_dict: dict, n_continuous_days: int,
     return weighted_pooled_embeddings, {"change_percentage": change_percentage, "start_date": start_date}
 
 
-n_days = 15
-embedding_model_path = '../../moka-ai/m3e-large'
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-teu = TextExtractionUnit(embedding_model_path, dim_input=1024, dim_output=1024, dropout=0.1, pooling_mode='avg').to(
-    device)
 
-news_dict = load_pickle_dict('../../datas/news_dict.pickle')
-vol_dict = load_pickle_dict('../../stock_fetching/vol_dict.pickle')
 
-record = []
-import time
-start_time = time.time()
-for date in tqdm(news_dict.keys()):
-    embedding, metadata = get_vec(date,vol_dict, news_dict, n_days, device)
-    if embedding is None:
-        continue
-    print((embedding, metadata))
+def test():
+    n_days = 15
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-run_time = time.time() - start_time
-print(record)
-print(f"The loop ran in {run_time} seconds.")
+
+    news_dict = load_pickle_dict('../../datas/news_dict.pickle')
+    vol_dict = load_pickle_dict('../../stock_fetching/vol_dict.pickle')
+
+    record = []
+    import time
+    start_time = time.time()
+    for date in tqdm(news_dict.keys()):
+        embedding, metadata = get_vec(date,vol_dict, news_dict, n_days, device)
+        if embedding is None:
+            continue
+        print((embedding, metadata))
+
+    run_time = time.time() - start_time
+    print(record)
+    print(f"The loop ran in {run_time} seconds.")
+
+
+if __name__ == '__main__':
+    # test()
+    ...

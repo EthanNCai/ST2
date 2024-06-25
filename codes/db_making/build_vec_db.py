@@ -5,10 +5,12 @@ import numpy as np
 from datetime import datetime, timedelta
 from TEU import TextExtractionUnit
 import torch
+from get_vec import get_vec
+from tqdm import tqdm
+import time
 
-n_continuous_day = 15
-
-stock_name = ''
+n_days = 15
+stock_name = 'HSI'
 
 
 def sha256_str(str_in: str) -> str:
@@ -25,34 +27,56 @@ def load_pickle_dict(news_dict_pickle_path):
 
 news_dict = load_pickle_dict('../../datas/news_dict.pickle')
 vol_dict = load_pickle_dict('../../stock_fetching/vol_dict.pickle')
+embedding_model_path = '../../moka-ai/m3e-large'
 
 
 client = PersistentClient(path='./test')
-embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction()
+embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name=embedding_model_path)
 
 # client.reset()
 collection = client.get_or_create_collection(name="a_nice_collection",
                                              embedding_function=embedding_function, )
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-source_texts = [("挺好的，我感觉这个很棒", "2021-01-02"),
-                ("不错的，这个确实很好，我很推荐", "2021-01-03"),
-                ("这玩意太垃圾了把", "2021-01-04"),
-                ("这个东西真的是十分的糟糕", "2021-01-05"),
-                ("很好，我喜欢这个东西", "2021-01-06")]
+teu = TextExtractionUnit(embedding_model_path, dim_input=1024, dim_output=1024, dropout=0.1, pooling_mode='avg').to(
+    device)
 
-# 增加数据
-texts = [text for text, _ in source_texts]
-dates = [{"date": date} for _, date in source_texts]
-ids = [sha256_str(text) for text in texts]
+news_dict = load_pickle_dict('../../datas/news_dict.pickle')
+vol_dict = load_pickle_dict('../../stock_fetching/vol_dict.pickle')
 
-collection.add(
+embeddings = []
+meta_datas = []
+texts = []
+start_time = time.time()
+
+counter = 0
+n_debug = 2
+
+for date in tqdm(news_dict.keys()):
+    embedding, metadata = get_vec(date, vol_dict, news_dict, n_days, teu, device)
+    if embedding is None:
+        continue
+    else:
+        embeddings.append(embedding.detach().tolist())
+        meta_datas.append(metadata)
+        texts.append(news_dict[date])
+        print(embedding.detach().tolist(), metadata)
+    counter += 1
+    if counter >= n_debug:
+        break
+
+print(len(embeddings), len(meta_datas))
+collection.upsert(
     documents=texts,
-    ids=ids,
-    metadatas=dates
+    embeddings=embeddings,
+    metadatas=meta_datas,
+    ids=[sha256_str(text[0]) for text in texts]
 )
 
+quit()
 # 查数据
 result = collection.query(
     query_texts=["不错，我觉得挺好", "好棒啊"],
