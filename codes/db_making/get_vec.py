@@ -61,8 +61,7 @@ def load_pickle_dict(news_dict_pickle_path):
 # ----------------------------------------
 
 
-
-def get_vec(start_date, vol_dict: dict, news_dict: dict, n_continuous_days: int, teu_,device_):
+def get_vec(start_date, vol_dict: dict, news_dict: dict, n_continuous_days: int, teu_, device_):
     news_dict = copy.deepcopy(news_dict)
     is_continuous, date_list, end_day, peek_day = get_continuous_days(news_dict
                                                                       , start_date
@@ -75,15 +74,15 @@ def get_vec(start_date, vol_dict: dict, news_dict: dict, n_continuous_days: int,
     weighted_pooled_embeddings = weighted_pooling(weights_list=tensor_weights, target_tensor=day_wise_embeddings)
     change_percentage = get_peek_change_percentage(vol_dict, end_day, peek_day)
 
-    return weighted_pooled_embeddings, {"change_percentage": change_percentage, "start_date": start_date}
-
-
+    return weighted_pooled_embeddings, {"change_percentage": change_percentage,
+                                        "start_date": start_date,
+                                        "end_date": end_day,
+                                        "peek_day": peek_day},
 
 
 def test():
     n_days = 15
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
 
     news_dict = load_pickle_dict('../../datas/news_dict.pickle')
     vol_dict = load_pickle_dict('../../stock_fetching/vol_dict.pickle')
@@ -92,7 +91,7 @@ def test():
     import time
     start_time = time.time()
     for date in tqdm(news_dict.keys()):
-        embedding, metadata = get_vec(date,vol_dict, news_dict, n_days, device)
+        embedding, metadata = get_vec(date, vol_dict, news_dict, n_days, device)
         if embedding is None:
             continue
         print((embedding, metadata))

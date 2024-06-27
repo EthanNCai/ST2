@@ -54,10 +54,8 @@ def main():
     train = raw_data[:int(len(raw_data) * train_test_ratio)]
 
     train_serial = SerialDataset(train, time_step=time_step,
-                                 target_mean_len=target_mean_len,
                                  to_tensor=True)
     test_serial = SerialDataset(test, time_step=time_step,
-                                target_mean_len=target_mean_len,
                                 to_tensor=True)
     train_loader = DataLoader(train_serial, batch_size=batch_size, shuffle=True, num_workers=2,
                               drop_last=True)

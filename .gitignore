@@ -14,7 +14,7 @@ weiboSpider/weibo.db
 *.log
 
 moka-ai/*
-
+codes/db_making/dbs/*
 .idea
 
 /checkpoints
