@@ -1,8 +1,5 @@
 from torch import nn
 import torch
-from transformers import BertTokenizer, BertModel, AdamW
-import torch
-from datasets import load_dataset
 from sentence_transformers import SentenceTransformer
 
 

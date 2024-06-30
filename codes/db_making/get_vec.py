@@ -39,15 +39,27 @@ def generate_weight(n_weights, decay_index=1.5, return_tensor=False, device='cpu
     total_sum = np.sum(y_values)
     y_values /= total_sum
     if return_tensor:
-        return torch.tensor(y_values).to(device)
+        return torch.tensor(y_values).to(torch.float32).to(device)
     else:
         return y_values
 
 
-def get_peek_change_percentage(vol_dict: dict, end_day: str, peek_day: str):
-    end_day_data = vol_dict[end_day]
-    peek_day_data = vol_dict[peek_day]
-    return (peek_day_data - end_day_data) / end_day_data
+def get_change_percentage(end, peek):
+    return (peek - end) / end
+
+
+def get_end_peek_info(stock_dict, end_day, peek_day):
+    return stock_dict[end_day], stock_dict[peek_day]
+
+
+def get_end_peek_pct(stock_dict: dict, end_day, peek_day):
+    end_dict: dict = stock_dict[end_day]
+    peek_dict: dict = stock_dict[peek_day]
+    stock_keys = list(end_dict.keys())
+    pct_dict = {}
+    for key in stock_keys:
+        pct_dict[key] = get_change_percentage(end_dict[key], peek_dict[key])
+    return pct_dict
 
 
 def load_pickle_dict(news_dict_pickle_path):
@@ -72,9 +84,12 @@ def get_vec(start_date, vol_dict: dict, news_dict: dict, n_continuous_days: int,
     day_wise_embeddings = torch.concat(list(map(teu_, news_list_ordered_by_date)), dim=0)
     tensor_weights = generate_weight(n_continuous_days, return_tensor=True, device=device_)
     weighted_pooled_embeddings = weighted_pooling(weights_list=tensor_weights, target_tensor=day_wise_embeddings)
-    change_percentage = get_peek_change_percentage(vol_dict, end_day, peek_day)
+    peek_info_dict, end_info_dict = get_end_peek_info(vol_dict, end_day, peek_day)
+    pct_dict = get_end_peek_pct(vol_dict, end_day, peek_day)
 
-    return weighted_pooled_embeddings, {"change_percentage": change_percentage,
+    return weighted_pooled_embeddings, {"peek_info_dict": str(peek_info_dict),
+                                        "end_info_dict": str(end_info_dict),
+                                        "pct_dict": str(pct_dict),
                                         "start_date": start_date,
                                         "end_date": end_day,
                                         "peek_day": peek_day},
