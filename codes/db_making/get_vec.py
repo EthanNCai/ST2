@@ -19,14 +19,16 @@ def weighted_pooling(weights_list: torch.tensor, target_tensor: torch.tensor):
     return sum(weights_tensor * target_tensor)
 
 
-def get_continuous_days(news_dict_: dict, day_started, n_days):
+def get_continuous_days(news_dict_: dict, stock_dict:dict,day_started, n_days):
     start_date = datetime.strptime(day_started, "%Y-%m-%d")
     dates_list = []
+
     for i in range(n_days + 1):
         next_date = start_date + timedelta(days=i + 1)
         dates_list.append(next_date.strftime("%Y-%m-%d"))
     dates_set = set(dates_list)
-    return dates_set.issubset(set(news_dict_.keys())), dates_list[:-1], dates_list[-2], dates_list[-1]
+    is_valid = dates_set.issubset(set(news_dict_.keys())) and dates_set.issubset(set(stock_dict.keys()))
+    return is_valid, dates_list[:-1], dates_list[-2], dates_list[-1]
 
 
 def generate_weight(n_weights, decay_index=1.5, return_tensor=False, device='cpu'):
@@ -73,19 +75,20 @@ def load_pickle_dict(news_dict_pickle_path):
 # ----------------------------------------
 
 
-def get_vec(start_date, vol_dict: dict, news_dict: dict, n_continuous_days: int, teu_, device_):
+def get_vec(start_date, stock_dict: dict, news_dict: dict, n_continuous_days: int, teu_, device_):
     news_dict = copy.deepcopy(news_dict)
-    is_continuous, date_list, end_day, peek_day = get_continuous_days(news_dict
+    is_valid, date_list, end_day, peek_day = get_continuous_days(news_dict
+                                                                      , stock_dict
                                                                       , start_date
                                                                       , n_continuous_days)
-    if not is_continuous or peek_day not in vol_dict or end_day not in vol_dict:
+    if not is_valid:
         return None, None
     news_list_ordered_by_date = [news_dict[date] for date in date_list]
     day_wise_embeddings = torch.concat(list(map(teu_, news_list_ordered_by_date)), dim=0)
     tensor_weights = generate_weight(n_continuous_days, return_tensor=True, device=device_)
     weighted_pooled_embeddings = weighted_pooling(weights_list=tensor_weights, target_tensor=day_wise_embeddings)
-    peek_info_dict, end_info_dict = get_end_peek_info(vol_dict, end_day, peek_day)
-    pct_dict = get_end_peek_pct(vol_dict, end_day, peek_day)
+    peek_info_dict, end_info_dict = get_end_peek_info(stock_dict, end_day, peek_day)
+    pct_dict = get_end_peek_pct(stock_dict, end_day, peek_day)
 
     return weighted_pooled_embeddings, {"peek_info_dict": str(peek_info_dict),
                                         "end_info_dict": str(end_info_dict),

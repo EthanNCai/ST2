@@ -9,7 +9,7 @@ from get_vec import get_vec
 from tqdm import tqdm
 import time
 
-n_days = 4
+stage1_windows = 5
 stock_name = 'HSI-10'
 # device = 'cuda' if torch.cuda.is_available() else 'cpu'
 device = 'mps'
@@ -53,7 +53,7 @@ n_debug = 0
 for date in tqdm(news_dict.keys()):
     # if counter >= n_debug:
     #     break
-    embedding, metadata = get_vec(date, vol_dict, news_dict, n_days, teu, device)
+    embedding, metadata = get_vec(date, vol_dict, news_dict, stage1_windows, teu, device)
     if embedding is None:
         continue
     else:
