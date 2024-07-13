@@ -19,6 +19,10 @@ def weighted_pooling(weights_list: torch.tensor, target_tensor: torch.tensor):
     return sum(weights_tensor * target_tensor)
 
 
+def get_exchange_days(stock_dict:dict):
+    return stock_dict.keys()
+
+
 def get_continuous_days(news_dict_: dict, day_started, n_days):
     start_date = datetime.strptime(day_started, "%Y-%m-%d")
     dates_list = []
@@ -28,6 +32,14 @@ def get_continuous_days(news_dict_: dict, day_started, n_days):
     dates_set = set(dates_list)
     return dates_set.issubset(set(news_dict_.keys())), dates_list[:-1], dates_list[-2], dates_list[-1]
 
+def get_continuous_exchange_days(news_dict_: dict, day_started, n_days):
+    start_date = datetime.strptime(day_started, "%Y-%m-%d")
+    dates_list = []
+    for i in range(n_days + 1):
+        next_date = start_date + timedelta(days=i + 1)
+        dates_list.append(next_date.strftime("%Y-%m-%d"))
+    dates_set = set(dates_list)
+    return dates_set.issubset(set(news_dict_.keys())), dates_list[:-1], dates_list[-2], dates_list[-1]
 
 def generate_weight(n_weights, decay_index=1.5, return_tensor=False, device='cpu'):
     decay_rate = np.log(1 / n_weights) / (n_weights - 1)
