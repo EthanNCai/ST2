@@ -19,12 +19,12 @@ with open("hongloumeng.txt", "r",encoding='utf-8') as f:  # 打开文件
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 texts = text_splitter.split_text(raw_texts)
 
-client = chromadb.Client(settings=Settings(chroma_server_host='localhost',
-                                           chroma_server_http_port= 8899,
-                                           allow_reset=True))
-# client = PersistentClient(settings=Settings(persist_directory="./dbtest",allow_reset=True))
+# client = chromadb.Client(settings=Settings(chroma_server_host='localhost',
+#                                            chroma_server_http_port= 8899,
+#                                            allow_reset=True))
+client = PersistentClient(settings=Settings(persist_directory="./hlm",allow_reset=True))
 
-embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(model_name='../../moka-ai/m3e-large', device='cuda')
+embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(model_name='../../moka-ai/m3e-base', device='mps')
 client.reset()
 collection = client.get_or_create_collection(name="a_nice_collection",
                                       embedding_function=embedding_function,)

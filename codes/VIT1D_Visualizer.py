@@ -5,6 +5,7 @@ import numpy as np
 from SingleFeatureDataset import SerialDataset
 from torch.utils.data import DataLoader, Dataset
 
+
 def visualizer(train: np.ndarray, test: np.ndarray, time_step, model, *, device):
     # assert isinstance(train, np.ndarray)
     # assert np.ndim(train) == 1
@@ -19,7 +20,7 @@ def visualizer(train: np.ndarray, test: np.ndarray, time_step, model, *, device)
                                 target_mean_len=1,
                                 to_tensor=True)
     test_loader = DataLoader(test_serial, batch_size=1, shuffle=False, num_workers=2,
-                              drop_last=True)
+                             drop_last=True)
 
     y_hat = copy.deepcopy(train)
     y = train
@@ -38,8 +39,8 @@ def visualizer(train: np.ndarray, test: np.ndarray, time_step, model, *, device)
             y_hat.append(output)
             y.append(target)
 
-    #y = np.cumsum(np.array(y))
-    #y_hat = np.cumsum(np.array(y_hat))
+    # y = np.cumsum(np.array(y))
+    # y_hat = np.cumsum(np.array(y_hat))
     plt.plot(y[int(len(test) * 1.5):], c='r', linewidth=0.6)
     plt.plot(y_hat[int(len(test) * 1.5):], c='g', linewidth=0.6)
 
