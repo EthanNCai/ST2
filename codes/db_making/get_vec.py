@@ -19,13 +19,7 @@ def weighted_pooling(weights_list: torch.tensor, target_tensor: torch.tensor):
     return sum(weights_tensor * target_tensor)
 
 
-
-def get_exchange_days(stock_dict:dict):
-    return stock_dict.keys()
-
-
-def get_continuous_days(news_dict_: dict, stock_dict:dict,day_started, n_days):
-
+def get_continuous_days(news_dict_: dict, stock_dict: dict, day_started, n_days):
     start_date = datetime.strptime(day_started, "%Y-%m-%d")
     dates_list = []
 
@@ -36,14 +30,18 @@ def get_continuous_days(news_dict_: dict, stock_dict:dict,day_started, n_days):
     is_valid = dates_set.issubset(set(news_dict_.keys())) and dates_set.issubset(set(stock_dict.keys()))
     return is_valid, dates_list[:-1], dates_list[-2], dates_list[-1]
 
-def get_continuous_exchange_days(news_dict_: dict, day_started, n_days):
-    start_date = datetime.strptime(day_started, "%Y-%m-%d")
-    dates_list = []
-    for i in range(n_days + 1):
-        next_date = start_date + timedelta(days=i + 1)
-        dates_list.append(next_date.strftime("%Y-%m-%d"))
+
+def get_continuous_trade_days(news_dict_: dict, exchange_days_ordered: list, day_started, n_days):
+    # start_date = datetime.strptime(day_started, "%Y-%m-%d")
+    if day_started not in exchange_days_ordered:
+        return False, None, None, None
+    start_index = exchange_days_ordered.index(day_started)
+    if len(exchange_days_ordered) <= start_index + n_days:
+        return False, None, None, None
+    dates_list = exchange_days_ordered[start_index:start_index + n_days]
     dates_set = set(dates_list)
     return dates_set.issubset(set(news_dict_.keys())), dates_list[:-1], dates_list[-2], dates_list[-1]
+
 
 def generate_weight(n_weights, decay_index=1.5, return_tensor=False, device='cpu'):
     decay_rate = np.log(1 / n_weights) / (n_weights - 1)
@@ -87,19 +85,21 @@ def load_pickle_dict(news_dict_pickle_path):
 
 
 # ----------------------------------------
+exchange_days_ordered = []
 
 
-def get_vec(start_date, stock_dict: dict, news_dict: dict, n_continuous_days: int, teu_, device_):
+def get_vec(start_date, stock_dict: dict, news_dict: dict, n_continuous_days: int, exchange_days_ordered: list, teu_,
+            device_):
     news_dict = copy.deepcopy(news_dict)
-    is_valid, date_list, end_day, peek_day = get_continuous_days(news_dict
-                                                                      , stock_dict
-                                                                      , start_date
-                                                                      , n_continuous_days)
+    is_valid, date_list, end_day, peek_day = get_continuous_trade_days(news_dict,
+                                                                       exchange_days_ordered
+                                                                       , start_date
+                                                                       , n_continuous_days)
     if not is_valid:
         return None, None
     news_list_ordered_by_date = [news_dict[date] for date in date_list]
     day_wise_embeddings = torch.concat(list(map(teu_, news_list_ordered_by_date)), dim=0)
-    tensor_weights = generate_weight(n_continuous_days, return_tensor=True, device=device_)
+    tensor_weights = generate_weight(n_continuous_days-1, return_tensor=True, device=device_)
     weighted_pooled_embeddings = weighted_pooling(weights_list=tensor_weights, target_tensor=day_wise_embeddings)
     peek_info_dict, end_info_dict = get_end_peek_info(stock_dict, end_day, peek_day)
     pct_dict = get_end_peek_pct(stock_dict, end_day, peek_day)
@@ -110,7 +110,6 @@ def get_vec(start_date, stock_dict: dict, news_dict: dict, n_continuous_days: in
                                         "start_date": start_date,
                                         "end_date": end_day,
                                         "peek_day": peek_day},
-
 
 def test():
     n_days = 15

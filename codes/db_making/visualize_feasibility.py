@@ -17,6 +17,19 @@ stage2_window = 3
 assert stage1_window > stage2_window
 
 
+def sort_time_list(date_list: list):
+    parsed_dates = [datetime.datetime.strptime(date, '%Y-%m-%d') for date in date_list]
+    sorted_dates = sorted(parsed_dates)
+    sorted_date_strings = [date.strftime('%Y-%m-%d') for date in sorted_dates]
+    return sorted_date_strings
+
+
+def get_exchange_days(stock_dict: dict):
+    date_list = list(stock_dict.keys())
+    sorted_time_list = sort_time_list(date_list)
+    return sorted_time_list
+
+
 def standard_scaled_manhattan_distance(vec1, vec2):
     def scale(time_series):
         scaler = preprocessing.StandardScaler()
@@ -38,6 +51,7 @@ def load_pickle_dict(news_dict_pickle_path):
 
 
 stock_info_dict = load_pickle_dict(f'../../stock_fetching/{stock_name}-DICT.pickle')
+exchange_days_ordered = get_exchange_days(stock_info_dict)
 
 
 def sha256_str(str_in: str) -> str:
@@ -72,6 +86,13 @@ def get_xk_days_before(date_in, k):
     return dates_str
 
 
+def get_xk_trade_days_before(date_in, k):
+    start_date_index = exchange_days_ordered.index(date_in)
+    end_date_index = start_date_index + k
+    dates_list = exchange_days_ordered[start_date_index:end_date_index]
+    return dates_list
+
+
 def date_to_day_wise_info_list(date_list: list, info_dicts):
     dw_info_dict = {}
     '''
@@ -98,7 +119,7 @@ def stock_info_dict_similarity(dict_1: dict, dict_2: dict):
 
 def find_top_k_2(x_metadata: dict, y_metadatas: list, top_k_2: int):
     x_date_row = get_xk_days_before(x_metadata['end_date'], stage2_window)
-    y_date_row_list = [get_xk_days_before(metadata['end_date'], stage2_window) for metadata in y_metadatas]
+    y_date_row_list = [get_xk_trade_days_before(metadata['end_date'], stage2_window) for metadata in y_metadatas]
     x_dw_info_row = date_to_day_wise_info_list(x_date_row, stock_info_dict)
     y_dw_info_row_list = [date_to_day_wise_info_list(date_row, stock_info_dict) for date_row in y_date_row_list]
     scores = [stock_info_dict_similarity(x_dw_info_row, y_dw) for y_dw in y_dw_info_row_list]
@@ -107,18 +128,18 @@ def find_top_k_2(x_metadata: dict, y_metadatas: list, top_k_2: int):
     return scores
 
 
+device = 'cuda'
+
 news_dict = load_pickle_dict('../../datas/news_dict.pickle')
 vol_dict = load_pickle_dict(f'../../stock_fetching/{stock_name}-DICT.pickle')
-embedding_model_path = '../../moka-ai/m3e-base'
+embedding_model_path = '../../moka-ai/m3e-large'
 
 client = PersistentClient(path='./dbs/n_days_5')
 embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
-    model_name=embedding_model_path, device='mps')
+    model_name=embedding_model_path, device=device)
 
 collection = client.get_collection(name="default",
                                    embedding_function=embedding_function, )
-
-device = 'mps'
 
 list1 = []
 list2 = []
@@ -147,8 +168,7 @@ for x_embedding, x_metadata in tqdm(zip(all_embeddings, all_metadatas)):
                              })
         y_metadatas = y['metadatas'][0]
         top_k_2_y_indexes = find_top_k_2(x_metadata, y_metadatas, top_k_2)
-
-
+        print(top_k_2_y_indexes)
     except:
         pass
         # print('something went wrong')
