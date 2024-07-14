@@ -116,6 +116,14 @@ def stock_info_dict_similarity(dict_1: dict, dict_2: dict):
     avg_sim = sum(similarities) / len(similarities)
     return avg_sim
 
+def find_smallest_k_indices(nums, k):
+    if not nums or k <= 0 or k > len(nums):
+        return []
+    indexed_nums = list(enumerate(nums))
+    sorted_indexed_nums = sorted(indexed_nums, key=lambda x: x[1])
+    smallest_k_indices = [index for index, value in sorted_indexed_nums[:k]]
+    return smallest_k_indices
+
 
 def find_top_k_2(x_metadata: dict, y_metadatas: list, top_k_2: int):
     x_date_row = get_xk_days_before(x_metadata['end_date'], stage2_window)
@@ -167,8 +175,9 @@ for x_embedding, x_metadata in tqdm(zip(all_embeddings, all_metadatas)):
                                  }
                              })
         y_metadatas = y['metadatas'][0]
-        top_k_2_y_indexes = find_top_k_2(x_metadata, y_metadatas, top_k_2)
-        print(top_k_2_y_indexes)
+        manhattan_similarity_list = find_top_k_2(x_metadata, y_metadatas, top_k_2)
+        simest_indexes = find_smallest_k_indices(manhattan_similarity_list,top_k_2)
+        print(simest_indexes)
     except:
         pass
         # print('something went wrong')
