@@ -165,63 +165,63 @@ for x_embedding, x_metadata in tqdm(zip(all_embeddings, all_metadatas)):
     x_end_date = x_metadata['end_date']
     x_peek_day = x_metadata['peek_day']
     prevention_zone = get_prevention_zone(x_start_date, '2024-05-01')
-    try:
-        y = collection.query(query_embeddings=[x_embedding],
-                             n_results=top_k_1,
-                             where=
-                             {
-                                 'end_date': {
-                                     '$nin': prevention_zone
-                                 }
-                             })
-        y_metadatas = y['metadatas'][0]
-        manhattan_similarity_list = find_top_k_2(x_metadata, y_metadatas, top_k_2)
-        simest_indexes = find_smallest_k_indices(manhattan_similarity_list,top_k_2)
-        print(simest_indexes)
-    except:
-        pass
-        # print('something went wrong')
+
+    y = collection.query(query_embeddings=[x_embedding],
+                         n_results=top_k_1,
+                         where=
+                         {
+                             'end_date': {
+                                 '$nin': prevention_zone
+                             }
+                         })
+    y_metadatas = y['metadatas'][0]
+    manhattan_similarity_list = find_top_k_2(x_metadata, y_metadatas, top_k_2)
+    simest_indexes = find_smallest_k_indices(manhattan_similarity_list,top_k_2)
+    simest_pct_dicts_list = [eval(y['metadatas'][0][index]['pct_dict']) for index in simest_indexes]
+    list1.append([x_pct_dict] * stage2_window)
+    list2 += simest_pct_dicts_list
+
 
 assert len(list1) == len(list2)
 
 import matplotlib.pyplot as plt
 
-# 创建一个包含5个子图的figure
-# fig, axes = plt.subplots(3, 2, figsize=(12, 12))
-#
-# # 散点图(xan,yan)
-# axes[0, 0].scatter([x[0] for x in list1], [y[0] for y in list2])
-# axes[0, 0].set_title("Scatter Plot (xa, ya)")
-# axes[0, 0].set_xlabel("xa")
-# axes[0, 0].set_ylabel("ya")
-#
-# # 散点图(xbn,ybn)
-# axes[0, 1].scatter([x[1] for x in list1], [y[1] for y in list2])
-# axes[0, 1].set_title("Scatter Plot (xb, yb)")
-# axes[0, 1].set_xlabel("xb")
-# axes[0, 1].set_ylabel("yb")
-#
-# # 散点图(xcn,ycn)
-# axes[1, 0].scatter([x[2] for x in list1], [y[2] for y in list2])
-# axes[1, 0].set_title("Scatter Plot (xc, yc)")
-# axes[1, 0].set_xlabel("xc")
-# axes[1, 0].set_ylabel("yc")
-#
-# # 散点图(xdn,ydn)
-# axes[1, 1].scatter([x[3] for x in list1], [y[3] for y in list2])
-# axes[1, 1].set_title("Scatter Plot (xd, yd)")
-# axes[1, 1].set_xlabel("xd")
-# axes[1, 1].set_ylabel("yd")
-#
-# # 散点图(xen,yen)
-# axes[2, 0].scatter([x[4] for x in list1], [y[4] for y in list2])
-# axes[2, 0].set_title("Scatter Plot (xe, ye)")
-# axes[2, 0].set_xlabel("xe")
-# axes[2, 0].set_ylabel("ye")
-#
-# # 调整子图间距并显示图形
-# plt.subplots_adjust(hspace=0.5)
-# plt.show()
+
+fig, axes = plt.subplots(3, 2, figsize=(12, 12))
+
+# 散点图(xan,yan)
+axes[0, 0].scatter([x['open'] for x in list1], [y['open'] for y in list2])
+axes[0, 0].set_title("Scatter Plot (xa, ya)")
+axes[0, 0].set_xlabel("xa")
+axes[0, 0].set_ylabel("ya")
+
+# 散点图(xbn,ybn)
+axes[0, 1].scatter([x['close'] for x in list1], [y['close'] for y in list2])
+axes[0, 1].set_title("Scatter Plot (xb, yb)")
+axes[0, 1].set_xlabel("xb")
+axes[0, 1].set_ylabel("yb")
+
+# 散点图(xcn,ycn)
+axes[1, 0].scatter([x['high'] for x in list1], [y['high'] for y in list2])
+axes[1, 0].set_title("Scatter Plot (xc, yc)")
+axes[1, 0].set_xlabel("xc")
+axes[1, 0].set_ylabel("yc")
+
+# 散点图(xdn,ydn)
+axes[1, 1].scatter([x['low'] for x in list1], [y['low'] for y in list2])
+axes[1, 1].set_title("Scatter Plot (xd, yd)")
+axes[1, 1].set_xlabel("xd")
+axes[1, 1].set_ylabel("yd")
+
+# 散点图(xen,yen)
+axes[2, 0].scatter([x['vol'] for x in list1], [y['vol'] for y in list2])
+axes[2, 0].set_title("Scatter Plot (xe, ye)")
+axes[2, 0].set_xlabel("xe")
+axes[2, 0].set_ylabel("ye")
+
+# 调整子图间距并显示图形
+plt.subplots_adjust(hspace=0.5)
+plt.show()
 
 """
 nive = {'peek_info_dict': "{'open': 22686.21, 'close': 22696.01, 'high': 22866.56, 'low': 22627.51, 'vol': 1209932.0}",
